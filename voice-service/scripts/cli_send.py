@@ -33,7 +33,7 @@ async def main() -> int:
             except ValueError:
                 args[k] = v
 
-    gs = GameSocket("127.0.0.1", 7777, on_event=lambda e: print(f"[event] {e}"))
+    gs = GameSocket("127.0.0.1", 47777, on_event=lambda e: print(f"[event] {e}"))
     await gs.connect()
     print(f"[send] intent={intent} args={args}")
     try:

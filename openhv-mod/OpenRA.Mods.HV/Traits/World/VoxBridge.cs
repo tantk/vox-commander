@@ -31,7 +31,10 @@ namespace OpenRA.Mods.HV.Traits
 	public class VoxBridgeInfo : TraitInfo
 	{
 		[Desc("TCP port to listen on for command JSON lines.")]
-		public readonly int Port = 7777;
+		public readonly int Port = 47777;
+
+		[Desc("Number of fallback ports to try if the configured port is unavailable.")]
+		public readonly int PortFallbackCount = 5;
 
 		[Desc("Ticks between state snapshots emitted to the client (default 50 = 2s at 25Hz).")]
 		public readonly int SnapshotInterval = 50;
@@ -60,10 +63,41 @@ namespace OpenRA.Mods.HV.Traits
 		public void WorldLoaded(World w, WorldRenderer wr)
 		{
 			world = w;
+
+			// Don't bind during shell map (the main-menu background scene) or map editor.
+			if (w.Type != WorldType.Regular)
+			{
+				Log.Write("debug", $"[VoxBridge] skipping bind: world.Type={w.Type}");
+				return;
+			}
+
 			cts = new CancellationTokenSource();
-			listener = new TcpListener(IPAddress.Loopback, info.Port);
-			listener.Start();
-			Log.Write("debug", $"[VoxBridge] listening on 127.0.0.1:{info.Port}");
+
+			int boundPort = -1;
+			for (var i = 0; i <= info.PortFallbackCount; i++)
+			{
+				var attempt = info.Port + i;
+				try
+				{
+					listener = new TcpListener(IPAddress.Loopback, attempt);
+					listener.Start();
+					boundPort = attempt;
+					break;
+				}
+				catch (SocketException ex)
+				{
+					Log.Write("debug", $"[VoxBridge] port {attempt} unavailable ({ex.SocketErrorCode}); trying next");
+					listener = null;
+				}
+			}
+
+			if (listener == null)
+			{
+				Log.Write("debug", $"[VoxBridge] FAILED to bind any port in [{info.Port}..{info.Port + info.PortFallbackCount}] — bridge disabled this match");
+				return;
+			}
+
+			Log.Write("debug", $"[VoxBridge] listening on 127.0.0.1:{boundPort}");
 			_ = Task.Run(() => AcceptLoopAsync(cts.Token));
 		}
 
@@ -114,6 +148,8 @@ namespace OpenRA.Mods.HV.Traits
 
 		public void Tick(Actor self)
 		{
+			if (listener == null) return;
+
 			if (!startEmitted && activeWriter != null)
 			{
 				Emit($"{{\"type\":\"event\",\"kind\":\"match_start\",\"ts\":{Game.LocalTick}}}");
