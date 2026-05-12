@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# OpenHV checkout (don't commit a fork; we keep our trait in openhv-mod/ overlay only)
+/openhv/
+
+# OS / IDE
+.vs/
+.vscode/
+*.swp
+Thumbs.db
+
+# Secrets
+.env
+*.local
+
+# Build artifacts
+bin/
+obj/
+dist/
+build/
