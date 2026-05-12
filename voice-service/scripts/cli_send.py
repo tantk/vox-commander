@@ -46,7 +46,8 @@ async def main() -> int:
         print("[ack] TIMEOUT")
         return 1
     finally:
-        await asyncio.sleep(0.2)
+        # Give snapshots/events a chance to arrive before closing.
+        await asyncio.sleep(3.0)
         await gs.close()
     return 0
 

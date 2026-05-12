@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -38,6 +39,10 @@ namespace OpenRA.Mods.HV.Traits
 
 		[Desc("Ticks between state snapshots emitted to the client (default 50 = 2s at 25Hz).")]
 		public readonly int SnapshotInterval = 50;
+
+		[Desc("Absolute or relative path to the voice-panel launcher script that spawns when a real match starts. " +
+			"Empty disables auto-spawn (use the panel manually).")]
+		public readonly string PanelLauncher = "C:/dev/elevenhack/cursor/vox-commander.bat";
 
 		public override object Create(ActorInitializer init) { return new VoxBridge(this); }
 	}
@@ -99,6 +104,41 @@ namespace OpenRA.Mods.HV.Traits
 
 			Log.Write("debug", $"[VoxBridge] listening on 127.0.0.1:{boundPort}");
 			_ = Task.Run(() => AcceptLoopAsync(cts.Token));
+
+			TrySpawnPanel();
+		}
+
+		void TrySpawnPanel()
+		{
+			if (string.IsNullOrWhiteSpace(info.PanelLauncher))
+			{
+				Log.Write("debug", "[VoxBridge] panel auto-spawn disabled (PanelLauncher empty)");
+				return;
+			}
+
+			var path = info.PanelLauncher;
+			if (!File.Exists(path))
+			{
+				Log.Write("debug", $"[VoxBridge] panel launcher not found at {path}; skipping auto-spawn");
+				return;
+			}
+
+			try
+			{
+				var psi = new ProcessStartInfo
+				{
+					FileName = path,
+					UseShellExecute = true,
+					CreateNoWindow = false,
+					WorkingDirectory = Path.GetDirectoryName(path) ?? string.Empty,
+				};
+				Process.Start(psi);
+				Log.Write("debug", $"[VoxBridge] launched voice panel: {path}");
+			}
+			catch (Exception ex)
+			{
+				Log.Write("debug", $"[VoxBridge] panel launch failed: {ex.Message}");
+			}
 		}
 
 		async Task AcceptLoopAsync(CancellationToken ct)
@@ -150,25 +190,35 @@ namespace OpenRA.Mods.HV.Traits
 		{
 			if (listener == null) return;
 
+			if (tickCount == 0)
+				Log.Write("debug", "[VoxBridge] first tick fired");
+
 			if (!startEmitted && activeWriter != null)
 			{
 				Emit($"{{\"type\":\"event\",\"kind\":\"match_start\",\"ts\":{Game.LocalTick}}}");
 				startEmitted = true;
+				Log.Write("debug", "[VoxBridge] emitted match_start");
 			}
 
 			while (inbound.TryDequeue(out var line))
 			{
+				Log.Write("debug", $"[VoxBridge] in: {line}");
 				var cmd = TryParse(line);
-				if (cmd == null) continue;
+				if (cmd == null)
+				{
+					Log.Write("debug", "[VoxBridge] parse failed");
+					continue;
+				}
 
 				try
 				{
 					var result = Dispatch(cmd);
+					Log.Write("debug", $"[VoxBridge] dispatched {cmd.Intent} -> ok={result.ok} err={result.error ?? "<null>"}");
 					SendAck(cmd.Id, result.ok, result.error);
 				}
 				catch (Exception ex)
 				{
-					Log.Write("debug", $"[VoxBridge] dispatch error on {cmd.Intent}: {ex.Message}");
+					Log.Write("debug", $"[VoxBridge] dispatch error on {cmd.Intent}: {ex}");
 					SendAck(cmd.Id, false, "dispatch_error");
 				}
 			}

@@ -60,8 +60,8 @@ async def amain() -> None:
         commentator.handle(event)
 
     game = GameSocket(host, port, on_event=on_event)
-    print(f"[main] connecting to bridge {host}:{port} ...")
-    await game.connect()
+    print(f"[main] connecting to bridge {host}:{port} (will wait up to 120s for the game) ...")
+    await game.connect(retry_interval=2.0, max_wait=120.0)
     print("[main] bridge connected")
 
     tools = Tools(game, resolver)

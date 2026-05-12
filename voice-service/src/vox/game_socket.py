@@ -22,9 +22,27 @@ class GameSocket:
         self._reader_task: asyncio.Task | None = None
         self._closed = False
 
-    async def connect(self) -> None:
-        self._reader, self._writer = await asyncio.open_connection(self.host, self.port)
-        self._reader_task = asyncio.create_task(self._read_loop())
+    async def connect(self, retry_interval: float = 2.0, max_wait: float = 0.0) -> None:
+        """Connect to the bridge, optionally waiting if it's not up yet.
+
+        max_wait=0 means try once and raise on failure (original behavior).
+        max_wait>0 means retry every `retry_interval` seconds until success or
+        the wait budget is exhausted.
+        """
+        loop = asyncio.get_event_loop()
+        deadline = loop.time() + max_wait if max_wait > 0 else None
+        last_error: Exception | None = None
+        while True:
+            try:
+                self._reader, self._writer = await asyncio.open_connection(self.host, self.port)
+                self._reader_task = asyncio.create_task(self._read_loop())
+                return
+            except (ConnectionRefusedError, OSError) as exc:
+                last_error = exc
+                if deadline is None or loop.time() >= deadline:
+                    break
+                await asyncio.sleep(retry_interval)
+        raise last_error if last_error else ConnectionRefusedError("bridge unreachable")
 
     async def close(self) -> None:
         self._closed = True
