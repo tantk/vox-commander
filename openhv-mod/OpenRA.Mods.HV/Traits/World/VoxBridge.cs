@@ -240,10 +240,23 @@ namespace OpenRA.Mods.HV.Traits
 			}
 		}
 
+		int lastQueueLogTick;
 		void TryAutoPlaceReadyBuildings()
 		{
 			var p = world.LocalPlayer;
 			if (p == null) return;
+
+			// Periodic queue diagnostic so we can see whether items are progressing.
+			if (tickCount - lastQueueLogTick > 50)
+			{
+				lastQueueLogTick = tickCount;
+				foreach (var q in p.PlayerActor.TraitsImplementing<ProductionQueue>())
+				{
+					var ci = q.CurrentItem();
+					if (ci == null) continue;
+					Log.Write("debug", $"[VoxBridge] queue {q.Info.Type}: item={ci.Item} remaining={ci.RemainingTime}/{ci.TotalTime} done={ci.Done} paused={ci.Paused}");
+				}
+			}
 
 			var queues = p.PlayerActor.TraitsImplementing<ProductionQueue>();
 			foreach (var queue in queues)

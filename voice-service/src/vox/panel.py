@@ -233,11 +233,13 @@ class Panel:
         # with args["steps"] = [(intent, args), ...].
         self.quick_actions: list[tuple[str, str, dict]] = [
             ("Standard Opening", "__combo__", {"steps": [
+                # Note: miner2 (Mining Tower) is NOT directly buildable — it's
+                # created when a miner deploys on ore. The auto_mine handler
+                # in the trait does that automatically when a miner appears.
                 ("produce_structure", {"structure": "generator"}),
                 ("produce_structure", {"structure": "storage"}),
                 ("produce_structure", {"structure": "factory"}),
                 ("produce_structure", {"structure": "radar"}),
-                ("produce_structure", {"structure": "miner2"}),
             ]}),
             ("Select All",         "select_all",        {}),
             ("Deploy Builder",     "deploy",            {}),
