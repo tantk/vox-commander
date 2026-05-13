@@ -305,6 +305,16 @@ namespace OpenRA.Mods.HV.Traits
 			try { activeClient?.Close(); } catch { }
 		}
 
+		// In-process entry point for the in-game chrome panel.
+		// The UI Logic class formats a JSON command string and pushes it through
+		// the same queue the TCP server feeds, so dispatch + diagnostics stay
+		// in one code path.
+		public void EnqueueRawCommand(string json)
+		{
+			if (string.IsNullOrWhiteSpace(json)) return;
+			inbound.Enqueue(json);
+		}
+
 		// ----- command dispatch -----
 
 		(bool ok, string error) Dispatch(ParsedCommand cmd)
