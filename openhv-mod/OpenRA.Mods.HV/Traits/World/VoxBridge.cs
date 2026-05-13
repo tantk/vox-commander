@@ -422,11 +422,23 @@ namespace OpenRA.Mods.HV.Traits
 				: 1;
 			if (unit == null) return (false, "missing_unit");
 
-			var producer = world.Actors.FirstOrDefault(a =>
-				!a.IsDead && a.Owner == p && a.TraitsImplementing<Production>().Any());
-			if (producer == null) return (false, "no_factory");
+			// Confirm at least one producer exists for some queue this unit belongs to.
+			if (!world.Map.Rules.Actors.TryGetValue(unit, out var ai))
+				return (false, "unknown_unit");
+			var buildable = ai.TraitInfoOrDefault<BuildableInfo>();
+			if (buildable == null) return (false, "not_buildable");
+			var queueType = buildable.Queue.FirstOrDefault();
+			if (queueType == null) return (false, "no_queue");
 
-			world.IssueOrder(Order.StartProduction(producer, unit, count));
+			var producer = world.Actors.FirstOrDefault(a =>
+				!a.IsDead && a.Owner == p &&
+				a.TraitsImplementing<Production>().Any(prod => prod.Info.Produces.Contains(queueType)));
+			if (producer == null) return (false, "no_producer_for_queue");
+
+			// Subject must be PlayerActor (where ProductionQueue traits live), not
+			// the producer building — same fix as HandleProduceStructure.
+			world.IssueOrder(Order.StartProduction(p.PlayerActor, unit, count));
+			Log.Write("debug", $"[VoxBridge] queued {count}x {unit} on PlayerActor for queue={queueType}");
 			return (true, null);
 		}
 
@@ -456,10 +468,12 @@ namespace OpenRA.Mods.HV.Traits
 				a.TraitsImplementing<Production>().Any(prod => prod.Info.Produces.Contains(queueType)));
 			if (producer == null) return (false, "no_producer_for_queue");
 
-			// Queue it. The trait's own per-tick auto-place loop will issue PlaceBuilding
-			// once the production timer reaches 0, mirroring what a click would do.
-			world.IssueOrder(Order.StartProduction(producer, name, 1));
-			Log.Write("debug", $"[VoxBridge] queued {name} from {producer.Info.Name} (queue={queueType})");
+			// CRITICAL: StartProduction's subject must be the actor that hosts the queue
+			// (i.e. the PlayerActor), NOT the producer building. ResolveOrder is invoked
+			// on traits attached to the order's subject; ProductionQueue is on PlayerActor.
+			// Sending it to the producer building drops the order silently.
+			world.IssueOrder(Order.StartProduction(p.PlayerActor, name, 1));
+			Log.Write("debug", $"[VoxBridge] queued {name} on PlayerActor for queue={queueType} (producer={producer.Info.Name})");
 			return (true, null);
 		}
 
