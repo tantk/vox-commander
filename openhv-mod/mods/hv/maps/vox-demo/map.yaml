@@ -1,0 +1,272 @@
+MapFormat: 12
+
+RequiresMod: hv
+
+Title: Vox Demo
+
+Author: Vox Commander team
+
+Tileset: PLANET
+
+MapSize: 50,74
+
+Bounds: 1,1,48,72
+
+Visibility: Lobby
+
+Categories: Conquest
+
+Players:
+	PlayerReference@Neutral:
+		Name: Neutral
+		OwnsWorld: True
+		NonCombatant: True
+		Faction: Random
+	PlayerReference@Creeps:
+		Name: Creeps
+		NonCombatant: True
+		Faction: Random
+		Enemies: Multi0, Multi1
+	PlayerReference@Multi0:
+		Name: Multi0
+		Playable: True
+		Faction: Random
+		Enemies: Creeps, Multi1
+	PlayerReference@Multi1:
+		Name: Multi1
+		Playable: True
+		Faction: Random
+		Enemies: Creeps, Multi0
+
+Actors:
+	# Spawn anchors (keep, so MapStartingUnits still drops the builder)
+	Spawn0: mpspawn
+		Owner: Neutral
+		Location: 24,19
+	Spawn1: mpspawn
+		Owner: Neutral
+		Location: 24,52
+
+	# --- Multi0 pre-placed base + army (north) ---
+	M0Outpost: outpost
+		Owner: Multi0
+		Location: 21,21
+	M0Storage: storage
+		Owner: Multi0
+		Location: 24,21
+	M0Factory: factory
+		Owner: Multi0
+		Location: 27,21
+	M0Module: module
+		Owner: Multi0
+		Location: 30,21
+	M0Tank1: mbt
+		Owner: Multi0
+		Facing: 512
+		Location: 20,25
+	M0Tank2: mbt
+		Owner: Multi0
+		Facing: 512
+		Location: 22,25
+	M0Tank3: mbt
+		Owner: Multi0
+		Facing: 512
+		Location: 24,25
+	M0Rifle1: rifleman
+		Owner: Multi0
+		Facing: 512
+		Location: 26,25
+	M0Rifle2: rifleman
+		Owner: Multi0
+		Facing: 512
+		Location: 28,25
+	M0Rifle3: rifleman
+		Owner: Multi0
+		Facing: 512
+		Location: 30,25
+
+	# --- Multi1 pre-placed base + army (south) ---
+	M1Outpost: outpost
+		Owner: Multi1
+		Location: 21,50
+	M1Storage: storage
+		Owner: Multi1
+		Location: 24,50
+	M1Factory: factory
+		Owner: Multi1
+		Location: 27,50
+	M1Module: module
+		Owner: Multi1
+		Location: 30,50
+	M1Tank1: mbt
+		Owner: Multi1
+		Facing: 0
+		Location: 20,46
+	M1Tank2: mbt
+		Owner: Multi1
+		Facing: 0
+		Location: 22,46
+	M1Tank3: mbt
+		Owner: Multi1
+		Facing: 0
+		Location: 24,46
+	M1Rifle1: rifleman
+		Owner: Multi1
+		Facing: 0
+		Location: 26,46
+	M1Rifle2: rifleman
+		Owner: Multi1
+		Facing: 0
+		Location: 28,46
+	M1Rifle3: rifleman
+		Owner: Multi1
+		Facing: 0
+		Location: 30,46
+
+	# --- Neutral terrain decoration (carried over from business-as-usual) ---
+	Light0: lamppost
+		Owner: Neutral
+		Location: 13,32
+	Light1: lamppost
+		Owner: Neutral
+		Location: 18,32
+	Light2: lamppost
+		Owner: Neutral
+		Location: 31,32
+	Light3: lamppost
+		Owner: Neutral
+		Location: 36,32
+	Light4: lamppost
+		Owner: Neutral
+		Location: 14,35
+	Light5: lamppost
+		Owner: Neutral
+		Location: 17,35
+	Light6: lamppost
+		Owner: Neutral
+		Location: 32,35
+	Light7: lamppost
+		Owner: Neutral
+		Location: 35,35
+	Light8: lamppost
+		Owner: Neutral
+		Location: 14,38
+	Light9: lamppost
+		Owner: Neutral
+		Location: 17,38
+	Light10: lamppost
+		Owner: Neutral
+		Location: 32,38
+	Light11: lamppost
+		Owner: Neutral
+		Location: 35,38
+	Light12: lamppost
+		Owner: Neutral
+		Location: 13,41
+	Light13: lamppost
+		Owner: Neutral
+		Location: 18,41
+	Light14: lamppost
+		Owner: Neutral
+		Location: 31,41
+	Light15: lamppost
+		Owner: Neutral
+		Location: 36,41
+	Res0: resource_light
+		Owner: Neutral
+		Location: 16,23
+	Res1: resource_light
+		Owner: Neutral
+		Location: 34,29
+	Res2: resource_light
+		Owner: Neutral
+		Location: 34,15
+	Res3: resource_light
+		Owner: Neutral
+		Location: 34,50
+	Res4: resource_light
+		Owner: Neutral
+		Location: 16,44
+	Res5: resource_light
+		Owner: Neutral
+		Location: 16,58
+	Res6: resource_light
+		Owner: Neutral
+		Location: 12,36
+	Lava0: lava_light
+		Owner: Neutral
+		Location: 25,37
+	Water0: water_light
+		Owner: Neutral
+		Location: 46,38
+	Water1: water_light
+		Owner: Neutral
+		Location: 43,54
+	Water2: water_light
+		Owner: Neutral
+		Location: 36,60
+	Water3: water_light
+		Owner: Neutral
+		Location: 3,35
+	Water4: water_light
+		Owner: Neutral
+		Location: 6,19
+	Water5: water_light
+		Owner: Neutral
+		Location: 13,13
+	Water6: water_light
+		Owner: Neutral
+		Location: 3,58
+	Water7: water_light
+		Owner: Neutral
+		Location: 46,16
+	Water8: water_light
+		Owner: Neutral
+		Location: 30,68
+	Water9: water_light
+		Owner: Neutral
+		Location: 18,4
+	Water10: water_light
+		Owner: Neutral
+		Location: 33,5
+	Water11: water_light
+		Owner: Neutral
+		Location: 16,68
+	Base0: base_light
+		Owner: Neutral
+		Location: 25,52
+	Base1: base_light
+		Owner: Neutral
+		Location: 25,19
+	Dark0: dark_light
+		Owner: Neutral
+		Location: 47,71
+	Dark1: dark_light
+		Owner: Neutral
+		Location: 2,71
+	Dark2: dark_light
+		Owner: Neutral
+		Location: 2,2
+	Dark3: dark_light
+		Owner: Neutral
+		Location: 47,2
+	Dark4: dark_light
+		Owner: Neutral
+		Location: 38,23
+	Dark5: dark_light
+		Owner: Neutral
+		Location: 11,50
+	Dark6: dark_light
+		Owner: Neutral
+		Location: 36,34
+	Dark7: dark_light
+		Owner: Neutral
+		Location: 36,39
+	Dark8: dark_light
+		Owner: Neutral
+		Location: 18,34
+	Dark9: dark_light
+		Owner: Neutral
+		Location: 18,39
+
+Rules: rules.yaml
