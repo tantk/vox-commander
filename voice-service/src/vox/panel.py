@@ -247,6 +247,7 @@ class Panel:
             ("Build Radar Dome",   "produce_structure", {"structure": "radar"}),
             ("Build Mining Tower", "produce_structure", {"structure": "miner2"}),
             ("Train Miner",        "build",             {"unit": "miner", "count": 1}),
+            ("Auto Mine (selected)", "auto_mine",       {}),
             ("Train 5 Assault Tank", "build",           {"unit": "mbt", "count": 5}),
             ("Train 3 Rifleman",   "build",             {"unit": "rifleman", "count": 3}),
             ("Harvest",            "harvest",           {}),

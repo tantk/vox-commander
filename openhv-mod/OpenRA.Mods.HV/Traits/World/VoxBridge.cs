@@ -62,6 +62,7 @@ namespace OpenRA.Mods.HV.Traits
 		int tickCount;
 		int prevFriendlyUnits = -1;
 		bool startEmitted;
+		readonly HashSet<uint> autoMineHandled = new HashSet<uint>();
 
 		public VoxBridge(VoxBridgeInfo info) { this.info = info; }
 
@@ -228,6 +229,10 @@ namespace OpenRA.Mods.HV.Traits
 			// do by clicking the ready building icon and then clicking the map.
 			TryAutoPlaceReadyBuildings();
 
+			// Also each tick: any newly-built miner gets sent to the nearest ore deposit
+			// and deploys into a Mining Tower. One-shot per miner, tracked by ActorID.
+			AutoMineNewMiners();
+
 			if (++tickCount % info.SnapshotInterval == 0)
 			{
 				EmitStateSnapshot();
@@ -301,6 +306,7 @@ namespace OpenRA.Mods.HV.Traits
 				case "produce_structure": return HandleProduceStructure(cmd.Args);
 				case "harvest":           return HandleHarvest();
 				case "deploy":            return HandleDeploy();
+				case "auto_mine":         return HandleAutoMine();
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
 				default:                  return (false, "unknown_intent");
@@ -481,6 +487,75 @@ namespace OpenRA.Mods.HV.Traits
 				}
 			}
 			return null;
+		}
+
+		(bool ok, string error) HandleAutoMine()
+		{
+			var selected = world.Selection.Actors
+				.Where(a => !a.IsDead && a.Owner == world.LocalPlayer)
+				.Where(IsMiner)
+				.ToList();
+			if (selected.Count == 0) return (false, "no_miner_selected");
+
+			var dispatched = 0;
+			foreach (var miner in selected)
+				if (TryDispatchMinerToOre(miner))
+					dispatched++;
+
+			return dispatched > 0 ? (true, null) : (false, "no_ore_found");
+		}
+
+		void AutoMineNewMiners()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return;
+			foreach (var a in world.Actors)
+			{
+				if (a.IsDead || !a.IsInWorld || a.Owner != p) continue;
+				if (!IsMiner(a)) continue;
+				if (autoMineHandled.Contains(a.ActorID)) continue;
+				autoMineHandled.Add(a.ActorID);
+				TryDispatchMinerToOre(a);
+			}
+		}
+
+		static bool IsMiner(Actor a) =>
+			a.Info.Name.Equals("miner", StringComparison.OrdinalIgnoreCase);
+
+		bool TryDispatchMinerToOre(Actor miner)
+		{
+			var cell = FindNearestOre(miner.Location);
+			if (cell == null)
+			{
+				Log.Write("debug", $"[VoxBridge] auto-mine: no ore on map for miner#{miner.ActorID}");
+				return false;
+			}
+			world.IssueOrder(new Order("Move", miner, Target.FromCell(world, cell.Value), queued: false));
+			world.IssueOrder(new Order("DeployTransform", miner, queued: true));
+			Log.Write("debug", $"[VoxBridge] auto-mine: miner#{miner.ActorID} -> {cell.Value}");
+			return true;
+		}
+
+		CPos? FindNearestOre(CPos origin)
+		{
+			var resourceLayer = world.WorldActor.TraitOrDefault<IResourceLayer>();
+			if (resourceLayer == null) return null;
+
+			CPos? best = null;
+			var bestDist = long.MaxValue;
+			foreach (var cell in world.Map.AllCells)
+			{
+				if (resourceLayer.GetResource(cell).Type == null) continue;
+				var dx = cell.X - origin.X;
+				var dy = cell.Y - origin.Y;
+				long dist = (long)dx * dx + (long)dy * dy;
+				if (dist < bestDist)
+				{
+					bestDist = dist;
+					best = cell;
+				}
+			}
+			return best;
 		}
 
 		(bool ok, string error) HandleDeploy()

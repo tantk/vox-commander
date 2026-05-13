@@ -50,6 +50,10 @@ single short spoken acknowledgement.
 - attack        args.target_ref or args.target_kind (e.g. "miner", "rifleman")
 - attack_move   same args as attack
 - harvest       no args — sends selected miner to mine ore
+- auto_mine     no args — for selected miner(s), find the nearest ore tile,
+                move there, then deploy into a Mining Tower. Also fires
+                automatically the moment any new miner is produced, so the
+                commander doesn't usually need to call it explicitly.
 - build         args.unit (lowercase HV unit name), args.count
 - produce_structure  args.structure (lowercase HV building name) — auto-places near base
 - meta_pause    args.paused: true|false
