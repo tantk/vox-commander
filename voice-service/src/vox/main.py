@@ -10,40 +10,49 @@ from elevenlabs import play
 from elevenlabs.client import ElevenLabs
 
 from .agent_client import AgentClient
-from .commentator import Commentator
+from .commentator import Commentator, Intel
 from .game_socket import GameSocket
 from .protocol import Event
 from .refs import RefResolver
 from .tools import Tools
 
 
-def make_commentator_speak() -> callable:
-    """Build a TTS-speak function bound to the commentator voice.
+def _make_tts_speak(env_var: str, channel: str) -> callable:
+    """Build a TTS-speak function bound to one ElevenLabs voice.
 
-    Failures are logged but don't propagate — a broken commentator must not
-    take down the command loop.
+    Failures are logged but don't propagate — broken audio must not take
+    down the command loop.
     """
     api_key = os.environ.get("ELEVENLABS_API_KEY")
-    voice_id = os.environ.get("VOX_COMMENTATOR_VOICE_ID")
+    voice_id = os.environ.get(env_var)
     if not api_key or not voice_id:
         def disabled(text: str) -> None:
-            print(f"[commentator-disabled] {text}")
+            print(f"[{channel}-disabled] {text}")
         return disabled
 
     client = ElevenLabs(api_key=api_key)
 
     def speak(text: str) -> None:
+        print(f"[{channel}] {text}")
         try:
             audio = client.text_to_speech.convert(
                 voice_id=voice_id,
                 text=text,
-                model_id="eleven_turbo_v2_5",
+                model_id="eleven_flash_v2",
             )
             play(audio)
         except Exception as exc:
-            print(f"[commentator-error] {exc}")
+            print(f"[{channel}-error] {exc}")
 
     return speak
+
+
+def make_commentator_speak() -> callable:
+    return _make_tts_speak("VOX_COMMENTATOR_VOICE_ID", "commentator")
+
+
+def make_intel_speak() -> callable:
+    return _make_tts_speak("VOX_INTEL_VOICE_ID", "intel")
 
 
 async def amain() -> None:
@@ -53,11 +62,13 @@ async def amain() -> None:
 
     resolver = RefResolver()
     commentator = Commentator(make_commentator_speak())
+    intel = Intel(make_intel_speak())
 
     def on_event(event: Event) -> None:
         if event.kind == "state_snapshot":
             resolver.ingest_snapshot({"kind": "state_snapshot", **event.payload})
         commentator.handle(event)
+        intel.handle(event)
 
     game = GameSocket(host, port, on_event=on_event)
     print(f"[main] connecting to bridge {host}:{port} (will wait up to 120s for the game) ...")

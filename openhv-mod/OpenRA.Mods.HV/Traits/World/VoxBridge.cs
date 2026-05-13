@@ -66,6 +66,11 @@ namespace OpenRA.Mods.HV.Traits
 		readonly Dictionary<uint, CPos> dispatchedMinerDestinations = new Dictionary<uint, CPos>();
 		readonly HashSet<uint> minerDeployFired = new HashSet<uint>();
 
+		// Enemy intel state: previous-tick snapshot so we can detect deltas.
+		int prevEnemyArmyCount = -1;
+		int prevEnemyDistanceToBase = -1;
+		readonly Dictionary<string, string> prevEnemyQueueItem = new Dictionary<string, string>();
+
 		// Cells within this radius of an existing Mining Tower or an already-dispatched
 		// miner are considered "claimed" — the next miner picks the next nearest free ore.
 		const int OreClaimRadius = 6;
@@ -249,6 +254,7 @@ namespace OpenRA.Mods.HV.Traits
 			{
 				EmitStateSnapshot();
 				EmitDerivedEvents();
+				EmitEnemyIntel();
 			}
 		}
 
@@ -1133,6 +1139,98 @@ namespace OpenRA.Mods.HV.Traits
 				$"\"cash\":{cash},\"units\":{units}," +
 				$"\"enemies\":[{string.Join(",", enemyList)}]}}";
 			Emit(json);
+		}
+
+		void EmitEnemyIntel()
+		{
+			if (activeWriter == null || world.LocalPlayer == null) return;
+			var p = world.LocalPlayer;
+
+			// Snapshot enemy production queues. Each enemy player has their own
+			// ProductionQueue traits on their PlayerActor. We compare CurrentItem
+			// against the previous tick to detect freshly-queued items.
+			foreach (var enemyPlayer in world.Players)
+			{
+				if (enemyPlayer == p || enemyPlayer.NonCombatant) continue;
+
+				foreach (var q in enemyPlayer.PlayerActor.TraitsImplementing<ProductionQueue>())
+				{
+					var current = q.CurrentItem();
+					var item = current?.Item ?? "";
+					var key = $"{enemyPlayer.InternalName}:{q.Info.Type}";
+					prevEnemyQueueItem.TryGetValue(key, out var prev);
+					prevEnemyQueueItem[key] = item;
+					if (!string.IsNullOrEmpty(item) && item != prev)
+					{
+						EmitIntelEvent("enemy_producing", new Dictionary<string, string>
+						{
+							{ "kind", item },
+							{ "queue", q.Info.Type },
+						});
+					}
+				}
+			}
+
+			// Army-size surge: enemy mobile-combat count jumping by >=3 in one window
+			// is worth narrating.
+			var enemyArmy = world.Actors
+				.Where(a => !a.IsDead && a.IsInWorld && a.Owner != p && !a.Owner.NonCombatant)
+				.Count(a => a.TraitOrDefault<Mobile>() != null
+					&& a.TraitsImplementing<AttackBase>().Any(t => !t.IsTraitDisabled));
+			if (prevEnemyArmyCount >= 0 && enemyArmy >= prevEnemyArmyCount + 3)
+			{
+				EmitIntelEvent("enemy_army_surge", new Dictionary<string, string>
+				{
+					{ "count", enemyArmy.ToString() },
+					{ "delta", (enemyArmy - prevEnemyArmyCount).ToString() },
+				});
+			}
+			prevEnemyArmyCount = enemyArmy;
+
+			// Approach detection: if any enemy combat unit gets within N cells of
+			// our friendly base centroid, that's an incoming attack.
+			var home = FriendlyBaseCentroid(p);
+			if (home != null)
+			{
+				var nearest = int.MaxValue;
+				foreach (var a in world.Actors)
+				{
+					if (a.IsDead || !a.IsInWorld) continue;
+					if (a.Owner == p || a.Owner.NonCombatant) continue;
+					if (a.TraitOrDefault<Mobile>() == null) continue;
+					if (!a.TraitsImplementing<AttackBase>().Any(t => !t.IsTraitDisabled)) continue;
+					var dx = a.Location.X - home.Value.X;
+					var dy = a.Location.Y - home.Value.Y;
+					var d2 = dx * dx + dy * dy;
+					if (d2 < nearest) nearest = d2;
+				}
+				if (nearest < int.MaxValue)
+				{
+					var distance = (int)System.Math.Sqrt(nearest);
+					// Fire once when an enemy first crosses inside the 15-cell ring.
+					if (distance <= 15 && (prevEnemyDistanceToBase < 0 || prevEnemyDistanceToBase > 15))
+					{
+						EmitIntelEvent("enemy_approaching", new Dictionary<string, string>
+						{
+							{ "distance", distance.ToString() },
+						});
+					}
+					prevEnemyDistanceToBase = distance;
+				}
+			}
+		}
+
+		void EmitIntelEvent(string kind, Dictionary<string, string> payload)
+		{
+			var parts = new List<string>
+			{
+				"\"type\":\"event\"",
+				$"\"kind\":\"{kind}\"",
+				$"\"ts\":{Game.LocalTick}",
+			};
+			foreach (var kv in payload)
+				parts.Add($"\"{kv.Key}\":\"{kv.Value}\"");
+			Emit("{" + string.Join(",", parts) + "}");
 		}
 
 		void EmitDerivedEvents()

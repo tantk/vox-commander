@@ -1,4 +1,4 @@
-from vox.commentator import Commentator
+from vox.commentator import Commentator, Intel
 from vox.protocol import Event
 
 
@@ -51,3 +51,40 @@ def test_state_snapshot_is_silent():
     c = Commentator(tts.speak)
     c.handle(Event(kind="state_snapshot", ts=0, payload={"cash": 100}))
     assert tts.spoken == []
+
+
+def test_intel_enemy_producing_translates_kind():
+    tts = FakeTTS()
+    i = Intel(tts.speak)
+    i.handle(Event(kind="enemy_producing", ts=0, payload={"kind": "mbt", "queue": "Tank"}))
+    assert tts.spoken
+    assert any("tank" in s.lower() for s in tts.spoken)
+
+
+def test_intel_army_surge_announces():
+    tts = FakeTTS()
+    i = Intel(tts.speak)
+    i.handle(Event(kind="enemy_army_surge", ts=0, payload={"count": "8", "delta": "4"}))
+    assert tts.spoken
+    assert "8" in tts.spoken[0]
+
+
+def test_intel_approaching_announces():
+    tts = FakeTTS()
+    i = Intel(tts.speak)
+    i.handle(Event(kind="enemy_approaching", ts=0, payload={"distance": "12"}))
+    assert tts.spoken
+
+
+def test_intel_unknown_event_silent():
+    tts = FakeTTS()
+    i = Intel(tts.speak)
+    i.handle(Event(kind="state_snapshot", ts=0, payload={}))
+    assert tts.spoken == []
+
+
+def test_commentator_victory_announces():
+    tts = FakeTTS()
+    c = Commentator(tts.speak)
+    c.handle(Event(kind="victory", ts=0))
+    assert tts.spoken and "destroyed" in tts.spoken[0].lower()
