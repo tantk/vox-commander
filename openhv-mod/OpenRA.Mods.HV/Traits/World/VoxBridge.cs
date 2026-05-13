@@ -223,10 +223,58 @@ namespace OpenRA.Mods.HV.Traits
 				}
 			}
 
+			// Every tick: scan our player's production queues for items that finished
+			// building and need to be placed on the map. Mirrors what a player would
+			// do by clicking the ready building icon and then clicking the map.
+			TryAutoPlaceReadyBuildings();
+
 			if (++tickCount % info.SnapshotInterval == 0)
 			{
 				EmitStateSnapshot();
 				EmitDerivedEvents();
+			}
+		}
+
+		void TryAutoPlaceReadyBuildings()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return;
+
+			var queues = p.PlayerActor.TraitsImplementing<ProductionQueue>();
+			foreach (var queue in queues)
+			{
+				var current = queue.CurrentItem();
+				if (current == null || !current.Done)
+					continue;
+
+				if (!world.Map.Rules.Actors.TryGetValue(current.Item, out var ai))
+					continue;
+				var bi = ai.TraitInfoOrDefault<BuildingInfo>();
+				if (bi == null)
+					continue;  // unit, not a building — auto-deploys, no placement needed
+
+				var origin = ResolvePlacementOrigin();
+				var cell = FindPlacementCell(ai, bi, origin);
+				if (cell == null)
+					continue;  // try again next tick — maybe a cell opens up
+
+				// PlaceBuilding's ExtraData is the actor id of any producer that produces
+				// this queue's type. Find one.
+				var queueProducer = world.Actors.FirstOrDefault(a =>
+					!a.IsDead && a.Owner == p &&
+					a.TraitsImplementing<Production>().Any(prod => prod.Info.Produces.Contains(queue.Info.Type)));
+				if (queueProducer == null)
+					continue;
+
+				var placeOrder = new Order("PlaceBuilding", p.PlayerActor, Target.FromCell(world, cell.Value), false)
+				{
+					TargetString = current.Item,
+					ExtraLocation = new CPos(0, 0),
+					ExtraData = queueProducer.ActorID,
+					SuppressVisualFeedback = true,
+				};
+				world.IssueOrder(placeOrder);
+				Log.Write("debug", $"[VoxBridge] auto-placed {current.Item} at {cell.Value}");
 			}
 		}
 
@@ -370,39 +418,28 @@ namespace OpenRA.Mods.HV.Traits
 			var structure = args.TryGetProperty("structure", out var s) ? s.GetString() : null;
 			if (structure == null) return (false, "missing_structure");
 
-			// Validate structure exists in rules.
 			var name = structure.ToLowerInvariant();
 			if (!world.Map.Rules.Actors.TryGetValue(name, out var actorInfo))
 				return (false, "unknown_structure");
 			var buildingInfo = actorInfo.TraitInfoOrDefault<BuildingInfo>();
 			if (buildingInfo == null) return (false, "not_a_building");
 
-			// Pick a placement origin: nearest owned building (preferring Production traits)
-			// then any owned actor, then map center as last resort.
-			var origin = ResolvePlacementOrigin();
+			// Find a producer that can build this — its Production.Produces must include
+			// the queue type this structure belongs to.
+			var buildable = actorInfo.TraitInfoOrDefault<BuildableInfo>();
+			if (buildable == null) return (false, "not_buildable");
+			var queueType = buildable.Queue.FirstOrDefault();
+			if (queueType == null) return (false, "no_queue");
 
-			// Find a free cell near the origin.
-			var placement = FindPlacementCell(actorInfo, buildingInfo, origin);
-			if (placement == null) return (false, "no_placement_cell");
+			var producer = world.Actors.FirstOrDefault(a =>
+				!a.IsDead && a.Owner == p &&
+				a.TraitsImplementing<Production>().Any(prod => prod.Info.Produces.Contains(queueType)));
+			if (producer == null) return (false, "no_producer_for_queue");
 
-			// Demo cheat: spawn the actor directly instead of going through the production
-			// queue + manual placement (which requires waiting for the build timer to elapse).
-			// Free + instant. Fine for hackathon demo; revisit for "balanced" mode.
-			var initDict = new OpenRA.Primitives.TypeDictionary
-			{
-				new LocationInit(placement.Value),
-				new OwnerInit(p),
-			};
-			try
-			{
-				var spawned = world.CreateActor(name, initDict);
-				Log.Write("debug", $"[VoxBridge] spawned {name} at {placement.Value} (id={spawned.ActorID})");
-			}
-			catch (Exception ex)
-			{
-				Log.Write("debug", $"[VoxBridge] CreateActor({name}) failed: {ex.Message}");
-				return (false, "spawn_failed");
-			}
+			// Queue it. The trait's own per-tick auto-place loop will issue PlaceBuilding
+			// once the production timer reaches 0, mirroring what a click would do.
+			world.IssueOrder(Order.StartProduction(producer, name, 1));
+			Log.Write("debug", $"[VoxBridge] queued {name} from {producer.Info.Name} (queue={queueType})");
 			return (true, null);
 		}
 
