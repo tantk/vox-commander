@@ -244,6 +244,7 @@ namespace OpenRA.Mods.HV.Traits
 			switch (cmd.Intent)
 			{
 				case "select":            return HandleSelect(cmd.Args);
+				case "select_all":        return HandleSelectAll();
 				case "move":              return HandleMove(cmd.Args);
 				case "stop":              return HandleStop();
 				case "attack":            return HandleAttack(cmd.Args, attackMove: false);
@@ -251,6 +252,7 @@ namespace OpenRA.Mods.HV.Traits
 				case "build":             return HandleBuild(cmd.Args);
 				case "produce_structure": return HandleProduceStructure(cmd.Args);
 				case "harvest":           return HandleHarvest();
+				case "deploy":            return HandleDeploy();
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
 				default:                  return (false, "unknown_intent");
@@ -362,13 +364,92 @@ namespace OpenRA.Mods.HV.Traits
 
 		(bool ok, string error) HandleProduceStructure(JsonElement args)
 		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
 			var structure = args.TryGetProperty("structure", out var s) ? s.GetString() : null;
 			if (structure == null) return (false, "missing_structure");
+
+			// Find a producer that can build this structure.
 			var producer = world.Actors.FirstOrDefault(a =>
-				!a.IsDead && a.Owner == world.LocalPlayer && a.TraitsImplementing<Production>().Any());
+				!a.IsDead && a.Owner == p && a.TraitsImplementing<Production>().Any());
 			if (producer == null) return (false, "no_construction_yard");
+
+			// Validate structure exists in rules.
+			if (!world.Map.Rules.Actors.TryGetValue(structure.ToLowerInvariant(), out var actorInfo))
+				return (false, "unknown_structure");
+			var buildingInfo = actorInfo.TraitInfoOrDefault<BuildingInfo>();
+			if (buildingInfo == null) return (false, "not_a_building");
+
+			// Queue the production. The queue takes care of cost and prerequisites; we just enqueue.
 			world.IssueOrder(Order.StartProduction(producer, structure, 1));
+
+			// Find a free cell near the producer and immediately issue PlaceBuilding so the user
+			// doesn't have to click. We spiral outward; first cell that CanPlaceBuilding wins.
+			var placement = FindPlacementCell(actorInfo, buildingInfo, producer.Location);
+			if (placement == null) return (false, "no_placement_cell");
+
+			// Find the ProductionQueue actor for the placement order.
+			var queueActor = producer;
+			var placeOrder = new Order("PlaceBuilding", p.PlayerActor, Target.FromCell(world, placement.Value), false)
+			{
+				TargetString = structure,
+				ExtraLocation = new CPos(0, 0),
+				ExtraData = queueActor.ActorID,
+				SuppressVisualFeedback = true,
+			};
+			world.IssueOrder(placeOrder);
 			return (true, null);
+		}
+
+		CPos? FindPlacementCell(ActorInfo ai, BuildingInfo bi, CPos origin)
+		{
+			// Simple spiral search outward. Range ~ 12 cells which is generous for most buildings.
+			for (var radius = 1; radius <= 12; radius++)
+			{
+				for (var dx = -radius; dx <= radius; dx++)
+				{
+					for (var dy = -radius; dy <= radius; dy++)
+					{
+						if (Math.Abs(dx) != radius && Math.Abs(dy) != radius) continue;
+						var candidate = origin + new CVec(dx, dy);
+						if (world.CanPlaceBuilding(candidate, ai, bi, null))
+							return candidate;
+					}
+				}
+			}
+			return null;
+		}
+
+		(bool ok, string error) HandleDeploy()
+		{
+			var selected = world.Selection.Actors
+				.Where(a => !a.IsDead && a.Owner == world.LocalPlayer)
+				.ToList();
+			if (selected.Count == 0) return (false, "no_selection");
+
+			var deployed = 0;
+			foreach (var a in selected)
+			{
+				if (a.TraitOrDefault<Transforms>() != null)
+				{
+					world.IssueOrder(new Order("DeployTransform", a, false));
+					deployed++;
+				}
+			}
+			return deployed > 0 ? (true, null) : (false, "selection_cannot_deploy");
+		}
+
+		(bool ok, string error) HandleSelectAll()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+			var owned = world.Actors
+				.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p)
+				.Where(a => a.TraitOrDefault<Mobile>() != null || a.TraitOrDefault<Transforms>() != null)
+				.ToList();
+			world.Selection.Combine(world, owned, isCombine: false, isClick: false);
+			return owned.Count > 0 ? (true, null) : (false, "nothing_owned");
 		}
 
 		(bool ok, string error) HandleHarvest()
