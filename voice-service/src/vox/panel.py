@@ -229,7 +229,16 @@ class Panel:
         # (label, intent, args) tuples in display order.
         # Labels match the in-game build menu display names (HV calls the
         # generator "Power Plant", the mbt "Assault Tank" etc.).
+        # Combo actions (multiple intents in sequence) use intent="__combo__"
+        # with args["steps"] = [(intent, args), ...].
         self.quick_actions: list[tuple[str, str, dict]] = [
+            ("Standard Opening", "__combo__", {"steps": [
+                ("produce_structure", {"structure": "generator"}),
+                ("produce_structure", {"structure": "storage"}),
+                ("produce_structure", {"structure": "factory"}),
+                ("produce_structure", {"structure": "radar"}),
+                ("produce_structure", {"structure": "miner2"}),
+            ]}),
             ("Select All",         "select_all",        {}),
             ("Deploy Builder",     "deploy",            {}),
             ("Build Power Plant",  "produce_structure", {"structure": "generator"}),
@@ -304,6 +313,24 @@ class Panel:
     def _send_quick_action(self, label: str, intent: str, args: dict):
         port = int(self.env.get("VOX_BRIDGE_PORT", "47777"))
         host = self.env.get("VOX_BRIDGE_HOST", "127.0.0.1")
+
+        # Combo actions: run a sequence of (intent, args) steps; log each.
+        if intent == "__combo__":
+            steps = args.get("steps") or []
+            for sub_intent, sub_args in steps:
+                try:
+                    ack = send_command(sub_intent, sub_args, host=host, port=port, timeout=2.0)
+                except Exception as exc:
+                    ack = {"ok": False, "error": f"exception: {exc}"}
+                line = (
+                    f"[btn]   {sub_intent} {sub_args}: ok"
+                    if ack.get("ok")
+                    else f"[btn]   {sub_intent} {sub_args}: FAILED ({ack.get('error') or 'unknown'})"
+                )
+                self.root.after(0, self._append_log, line)
+            self.root.after(0, self._append_log, f"[btn] {label}: complete")
+            return
+
         try:
             ack = send_command(intent, args, host=host, port=port, timeout=2.0)
         except Exception as exc:
