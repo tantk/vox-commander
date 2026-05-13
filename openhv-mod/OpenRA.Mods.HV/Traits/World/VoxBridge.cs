@@ -276,19 +276,16 @@ namespace OpenRA.Mods.HV.Traits
 				if (cell == null)
 					continue;  // try again next tick — maybe a cell opens up
 
-				// PlaceBuilding's ExtraData is the actor id of any producer that produces
-				// this queue's type. Find one.
-				var queueProducer = world.Actors.FirstOrDefault(a =>
-					!a.IsDead && a.Owner == p &&
-					a.TraitsImplementing<Production>().Any(prod => prod.Info.Produces.Contains(queue.Info.Type)));
-				if (queueProducer == null)
-					continue;
-
+				// PlaceBuilding's ExtraData is the actor id of the actor that HOSTS the
+				// ProductionQueue trait — i.e. the PlayerActor, since queues are player-scoped
+				// in HV (ClassicProductionQueue on player.yaml). The engine's PlaceBuilding
+				// handler does: w.GetActorById(order.ExtraData).TraitsImplementing<ProductionQueue>()
+				// so the ID *must* match the queue host, not the producer building.
 				var placeOrder = new Order("PlaceBuilding", p.PlayerActor, Target.FromCell(world, cell.Value), false)
 				{
 					TargetString = current.Item,
 					ExtraLocation = new CPos(0, 0),
-					ExtraData = queueProducer.ActorID,
+					ExtraData = p.PlayerActor.ActorID,
 					SuppressVisualFeedback = true,
 				};
 				world.IssueOrder(placeOrder);
