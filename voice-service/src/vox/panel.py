@@ -261,13 +261,19 @@ class Panel:
         # with args["steps"] = [(intent, args), ...].
         self.quick_actions: list[tuple[str, str, dict]] = [
             ("Standard Opening", "__combo__", {"steps": [
-                # Note: miner2 (Mining Tower) is NOT directly buildable — it's
-                # created when a miner deploys on ore. The auto_mine handler
-                # in the trait does that automatically when a miner appears.
+                # Pure economy. Combat composition is the player's call.
+                # 1. generator — power, prevents LowPowerModifier slow-down
+                # 2. storage   — refinery + 1 free miner on creation
+                # 3. module    — pod factory (rifleman / sniper / mortar)
+                # 4. factory   — vehicle factory (mbt / aatank / artillery)
+                # 5. radar     — vision + unlocks aircraft tech
+                # 6. miner x3  — saturates one storage (4 miners total)
                 ("produce_structure", {"structure": "generator"}),
                 ("produce_structure", {"structure": "storage"}),
+                ("produce_structure", {"structure": "module"}),
                 ("produce_structure", {"structure": "factory"}),
                 ("produce_structure", {"structure": "radar"}),
+                ("build", {"unit": "miner", "count": 3}),
             ]}),
             ("Select Army",        "select_army",       {}),
             ("Select All",         "select_all",        {}),

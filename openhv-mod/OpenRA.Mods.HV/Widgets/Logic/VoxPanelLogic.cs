@@ -33,13 +33,24 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 			if (bridge == null)
 				return;
 
-			// Combos: list of (intent, jsonArgs) pairs we fire sequentially.
+			// Standard opening: pure-economy build chain. Combat composition is
+			// left to the player ("build 10 tanks", "build 5 rifles" etc.) so the
+			// opening doesn't blow the starting cash on speculative units.
+			//
+			// 1. generator  — power; without it production runs at LowPowerModifier speed
+			// 2. storage    — refinery + spawns 1 free miner (per HV encyclopedia text)
+			// 3. module     — produces pods (rifleman / sniper / mortar / etc.)
+			// 4. factory    — produces vehicles (mbt / aatank / artillery / etc.)
+			// 5. radar      — vision + unlocks aircraft tech
+			// 6. +3 miners  — saturates one storage (1 free + 3 trained = 4 active)
 			var standardOpening = new (string Intent, string Args)[]
 			{
 				("produce_structure", "{\"structure\":\"generator\"}"),
 				("produce_structure", "{\"structure\":\"storage\"}"),
+				("produce_structure", "{\"structure\":\"module\"}"),
 				("produce_structure", "{\"structure\":\"factory\"}"),
 				("produce_structure", "{\"structure\":\"radar\"}"),
+				("build",             "{\"unit\":\"miner\",\"count\":3}"),
 			};
 
 			Wire(widget, "VOX_BTN_OPENING",       () => RunCombo(standardOpening));

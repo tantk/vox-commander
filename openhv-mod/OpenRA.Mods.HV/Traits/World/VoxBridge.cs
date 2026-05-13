@@ -64,6 +64,7 @@ namespace OpenRA.Mods.HV.Traits
 		bool startEmitted;
 		readonly HashSet<uint> autoMineHandled = new HashSet<uint>();
 		readonly Dictionary<uint, CPos> dispatchedMinerDestinations = new Dictionary<uint, CPos>();
+		readonly HashSet<uint> minerDeployFired = new HashSet<uint>();
 
 		// Cells within this radius of an existing Mining Tower or an already-dispatched
 		// miner are considered "claimed" — the next miner picks the next nearest free ore.
@@ -237,6 +238,12 @@ namespace OpenRA.Mods.HV.Traits
 			// Also each tick: any newly-built miner gets sent to the nearest ore deposit
 			// and deploys into a Mining Tower. One-shot per miner, tracked by ActorID.
 			AutoMineNewMiners();
+
+			// And: any miner whose Transforms trait is unpaused (= it's standing on ore
+			// terrain right now) gets DeployTransform fired ONCE. Queuing the order with
+			// the move doesn't work because PauseOnCondition=!deposits drops the order
+			// silently while the miner is in transit.
+			AutoDeployMinersOnOre();
 
 			if (++tickCount % info.SnapshotInterval == 0)
 			{
@@ -714,10 +721,30 @@ namespace OpenRA.Mods.HV.Traits
 			}
 
 			dispatchedMinerDestinations[miner.ActorID] = cell.Value;
+			// Just move — deploy gets handled by AutoDeployMinersOnOre once the
+			// miner is actually standing on Ore terrain and its Transforms trait
+			// unpauses. Queuing DeployTransform here would be silently dropped.
 			world.IssueOrder(new Order("Move", miner, Target.FromCell(world, cell.Value), queued: false));
-			world.IssueOrder(new Order("DeployTransform", miner, queued: true));
 			Log.Write("debug", $"[VoxBridge] auto-mine: miner#{miner.ActorID} -> {cell.Value} (claimed)");
 			return true;
+		}
+
+		void AutoDeployMinersOnOre()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return;
+			foreach (var a in world.Actors)
+			{
+				if (a.IsDead || !a.IsInWorld || a.Owner != p) continue;
+				if (!IsMiner(a)) continue;
+				if (minerDeployFired.Contains(a.ActorID)) continue;
+				var t = a.TraitOrDefault<Transforms>();
+				if (t == null || t.IsTraitPaused || t.IsTraitDisabled) continue;
+				// Standing on ore, ready to deploy. One-shot.
+				world.IssueOrder(new Order("DeployTransform", a, false));
+				minerDeployFired.Add(a.ActorID);
+				Log.Write("debug", $"[VoxBridge] miner#{a.ActorID} deploying into Mining Tower");
+			}
 		}
 
 		CPos? FindNearestUnclaimedOre(CPos origin)
