@@ -292,6 +292,11 @@ class Panel:
             ("Stop",               "stop",              {}),
             ("Pause / Resume",     "meta_pause",        {}),
             ("Toggle Labels",      "toggle_labels",     {}),
+            ("Toggle Grid",        "toggle_grid",       {}),
+            ("Army → B4",          "station_army",      {"target": "B4"}),
+            ("Army → E5",          "station_army",      {"target": "E5"}),
+            ("Army → Midpoint",    "station_army",      {"target": "midpoint"}),
+            ("Hold near Storage",  "station_army",      {"target": "near_storage", "aggressive": False}),
         ]
 
         for i, (label, intent, args) in enumerate(self.quick_actions):

@@ -50,7 +50,13 @@ single short spoken acknowledgement.
                 THIS is what you want before issuing attack / attack_move.
 - deploy        no args — transforms the selected BUILDER into an outpost / base.
                 Always do this FIRST if the commander has no buildings yet.
-- move          args.target: "east_edge" | "west_edge" | "north_edge" | "south_edge" | "center"
+- move          args.target: any location reference. Accepts:
+                  "east_edge" | "west_edge" | "north_edge" | "south_edge" | "center"
+                  Battleship grid cells: "A1" through "F6" (call toggle_grid
+                  if the commander wants to see the grid before issuing).
+                  Semantic: "base" (our base), "enemy_base", "midpoint".
+                  Near-building: "near_storage", "near_radar", "near_factory",
+                  "near_outpost", "near_base", "near_generator".
 - stop          no args
 - attack        args.target_ref or args.target_kind (e.g. "miner", "rifleman")
 - attack_move   same args as attack
@@ -78,6 +84,17 @@ single short spoken acknowledgement.
 - build         args.unit (lowercase HV unit name), args.count
 - produce_structure  args.structure (lowercase HV building name) — auto-places near base
 - meta_pause    args.paused: true|false
+- station_army  args.target: any location reference (see "Targets" below).
+                args.aggressive: true (default) uses AttackMove so units engage
+                threats along the way; false uses plain Move (don't pick fights,
+                just go there — for "hold position").
+                Internally calls select_army first; one call covers a full
+                "Army to B4!" / "Hold the radar" / "Form up in the middle" order.
+
+- toggle_grid   args.visible: true|false (optional). Shows/hides the Battleship-
+                style A1..F6 grid overlay on the map. Use for "show the grid" /
+                "hide the grid" / "give me a tactical view".
+
 - toggle_labels args.visible: true|false (optional — if omitted, flips).
                 Shows/hides the friendly-name labels under each of the
                 commander's owned units, e.g. "Tank-1", "Miner-3", etc.

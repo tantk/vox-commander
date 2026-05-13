@@ -327,6 +327,8 @@ namespace OpenRA.Mods.HV.Traits
 				case "harass":            return HandleHarass();
 				case "assault":           return HandleAssault();
 				case "defend":            return HandleDefend();
+				case "station_army":      return HandleStationArmy(cmd.Args);
+				case "toggle_grid":       return HandleToggleGrid(cmd.Args);
 				case "toggle_labels":     return HandleToggleLabels(cmd.Args);
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
@@ -828,6 +830,50 @@ namespace OpenRA.Mods.HV.Traits
 			return (true, null);
 		}
 
+		(bool ok, string error) HandleStationArmy(JsonElement args)
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var army = ArmyUnits(p);
+			if (army.Count == 0) return (false, "no_army");
+
+			var target = args.TryGetProperty("target", out var t) ? t.GetString() : null;
+			if (string.IsNullOrEmpty(target)) return (false, "missing_target");
+
+			var cell = ResolveLogicalCell(target);
+			if (cell == null) return (false, "unknown_target");
+
+			// Default to AttackMove (engages threats along the way) — pass aggressive=false
+			// for plain Move (slip past skirmishes, used for "hold position without
+			// hunting").
+			var aggressive = !args.TryGetProperty("aggressive", out var ag)
+				|| ag.ValueKind != JsonValueKind.False;
+			var order = aggressive ? "AttackMove" : "Move";
+
+			world.Selection.Combine(world, army, isCombine: false, isClick: false);
+			foreach (var a in army)
+				world.IssueOrder(new Order(order, a, Target.FromCell(world, cell.Value), false));
+			Log.Write("debug", $"[VoxBridge] station_army: {army.Count} units {order} -> {target} ({cell.Value})");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleToggleGrid(JsonElement args)
+		{
+			var mgr = world.WorldActor.TraitOrDefault<VoxGridManager>();
+			if (mgr == null) return (false, "grid_manager_missing");
+
+			if (args.TryGetProperty("visible", out var v) && v.ValueKind == JsonValueKind.True)
+				mgr.Enabled = true;
+			else if (args.TryGetProperty("visible", out var v2) && v2.ValueKind == JsonValueKind.False)
+				mgr.Enabled = false;
+			else
+				mgr.Enabled = !mgr.Enabled;
+
+			Log.Write("debug", $"[VoxBridge] grid now {(mgr.Enabled ? "ON" : "OFF")}");
+			return (true, null);
+		}
+
 		(bool ok, string error) HandleToggleLabels(JsonElement args)
 		{
 			var mgr = world.WorldActor.TraitOrDefault<VoxLabelManager>();
@@ -863,8 +909,47 @@ namespace OpenRA.Mods.HV.Traits
 
 		CPos? ResolveLogicalCell(string @ref)
 		{
+			if (string.IsNullOrEmpty(@ref)) return null;
+
+			// 1) Battleship grid labels: "A1", "B4", "F6" etc.
+			var grid = world.WorldActor.TraitOrDefault<VoxGridManager>();
+			if (grid != null)
+			{
+				var fromGrid = grid.ResolveLabel(@ref, world);
+				if (fromGrid != null) return fromGrid;
+			}
+
+			// 2) Friendly-building references: "near_storage", "near_radar", etc.
+			if (@ref.StartsWith("near_", StringComparison.OrdinalIgnoreCase) && world.LocalPlayer != null)
+			{
+				var kind = @ref.Substring(5).ToLowerInvariant();
+				var bldg = world.Actors.FirstOrDefault(a =>
+					!a.IsDead && a.IsInWorld && a.Owner == world.LocalPlayer &&
+					a.Info.Name.Equals(kind, StringComparison.OrdinalIgnoreCase));
+				if (bldg != null) return bldg.Location;
+			}
+
+			// 3) Computed semantic locations.
+			if (world.LocalPlayer != null)
+			{
+				switch (@ref.ToLowerInvariant())
+				{
+					case "base": return FriendlyBaseCentroid(world.LocalPlayer);
+					case "enemy_base": return EnemyBaseCentroid(world.LocalPlayer);
+					case "midpoint":
+					{
+						var our = FriendlyBaseCentroid(world.LocalPlayer);
+						var their = EnemyBaseCentroid(world.LocalPlayer);
+						if (our != null && their != null)
+							return new CPos((our.Value.X + their.Value.X) / 2, (our.Value.Y + their.Value.Y) / 2);
+						return null;
+					}
+				}
+			}
+
+			// 4) Named map edges (legacy).
 			var b = world.Map.Bounds;
-			switch (@ref)
+			switch (@ref.ToLowerInvariant())
 			{
 				case "east_edge":  return new CPos(b.Right - 2, b.Top + b.Height / 2);
 				case "west_edge":  return new CPos(b.Left + 2,  b.Top + b.Height / 2);
