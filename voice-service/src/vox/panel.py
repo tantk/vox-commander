@@ -283,7 +283,7 @@ class Panel:
             ("Harvest",            "harvest",           {}),
             ("Attack East",        "attack_move",       {"target": "east_edge"}),
             ("Stop",               "stop",              {}),
-            ("Pause",              "meta_pause",        {"paused": True}),
+            ("Pause / Resume",     "meta_pause",        {}),
             ("Toggle Labels",      "toggle_labels",     {}),
         ]
 

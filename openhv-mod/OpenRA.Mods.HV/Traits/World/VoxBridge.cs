@@ -63,6 +63,11 @@ namespace OpenRA.Mods.HV.Traits
 		int prevFriendlyUnits = -1;
 		bool startEmitted;
 		readonly HashSet<uint> autoMineHandled = new HashSet<uint>();
+		readonly Dictionary<uint, CPos> dispatchedMinerDestinations = new Dictionary<uint, CPos>();
+
+		// Cells within this radius of an existing Mining Tower or an already-dispatched
+		// miner are considered "claimed" — the next miner picks the next nearest free ore.
+		const int OreClaimRadius = 6;
 
 		public VoxBridge(VoxBridgeInfo info) { this.info = info; }
 
@@ -549,31 +554,65 @@ namespace OpenRA.Mods.HV.Traits
 
 		bool TryDispatchMinerToOre(Actor miner)
 		{
-			var cell = FindNearestOre(miner.Location);
+			var cell = FindNearestUnclaimedOre(miner.Location);
 			if (cell == null)
 			{
-				Log.Write("debug", $"[VoxBridge] auto-mine: no ore on map for miner#{miner.ActorID}");
+				Log.Write("debug", $"[VoxBridge] auto-mine: no unclaimed ore for miner#{miner.ActorID}");
 				return false;
 			}
+
+			dispatchedMinerDestinations[miner.ActorID] = cell.Value;
 			world.IssueOrder(new Order("Move", miner, Target.FromCell(world, cell.Value), queued: false));
 			world.IssueOrder(new Order("DeployTransform", miner, queued: true));
-			Log.Write("debug", $"[VoxBridge] auto-mine: miner#{miner.ActorID} -> {cell.Value}");
+			Log.Write("debug", $"[VoxBridge] auto-mine: miner#{miner.ActorID} -> {cell.Value} (claimed)");
 			return true;
 		}
 
-		CPos? FindNearestOre(CPos origin)
+		CPos? FindNearestUnclaimedOre(CPos origin)
 		{
 			var resourceLayer = world.WorldActor.TraitOrDefault<IResourceLayer>();
 			if (resourceLayer == null) return null;
 
+			// Build the claimed set: every existing Mining Tower (any owner — they all
+			// physically block ore) plus every cell another miner of ours is heading toward.
+			var claimed = new List<CPos>();
+			foreach (var a in world.Actors)
+			{
+				if (a.IsDead || !a.IsInWorld) continue;
+				if (a.Info.Name.Equals("miner2", StringComparison.OrdinalIgnoreCase))
+					claimed.Add(a.Location);
+			}
+			foreach (var d in dispatchedMinerDestinations)
+			{
+				// Drop stale entries: miner died, or already deployed (no longer "miner").
+				var a = world.GetActorById(d.Key);
+				if (a == null || a.IsDead || !IsMiner(a)) continue;
+				claimed.Add(d.Value);
+			}
+
+			var claimSq = (long)OreClaimRadius * OreClaimRadius;
 			CPos? best = null;
 			var bestDist = long.MaxValue;
 			foreach (var cell in world.Map.AllCells)
 			{
 				if (resourceLayer.GetResource(cell).Type == null) continue;
-				var dx = cell.X - origin.X;
-				var dy = cell.Y - origin.Y;
-				long dist = (long)dx * dx + (long)dy * dy;
+
+				var tooClose = false;
+				foreach (var c in claimed)
+				{
+					var dx = cell.X - c.X;
+					var dy = cell.Y - c.Y;
+					if ((long)dx * dx + (long)dy * dy < claimSq)
+					{
+						tooClose = true;
+						break;
+					}
+				}
+				if (tooClose) continue;
+
+				var ox = cell.X - origin.X;
+				var oy = cell.Y - origin.Y;
+				long dist = (long)ox * ox + (long)oy * oy;
 				if (dist < bestDist)
 				{
 					bestDist = dist;
@@ -649,8 +688,15 @@ namespace OpenRA.Mods.HV.Traits
 
 		(bool ok, string error) HandleMetaPause(JsonElement args)
 		{
-			var paused = args.TryGetProperty("paused", out var p) && p.GetBoolean();
+			bool paused;
+			if (args.TryGetProperty("paused", out var p)
+				&& (p.ValueKind == JsonValueKind.True || p.ValueKind == JsonValueKind.False))
+				paused = p.GetBoolean();
+			else
+				paused = !world.Paused;  // toggle when caller didn't specify
+
 			world.SetPauseState(paused);
+			Log.Write("debug", $"[VoxBridge] pause -> {paused}");
 			return (true, null);
 		}
 
