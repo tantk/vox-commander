@@ -18,6 +18,8 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import font as tkfont
 
+from .sync_bridge import send_command
+
 ROOT = Path(__file__).resolve().parents[3]      # project root (C:\dev\elevenhack\cursor)
 ENV_PATH = ROOT / ".env"
 VOX_PY = ROOT / "voice-service" / ".venv" / "Scripts" / "python.exe"
@@ -137,8 +139,8 @@ class Panel:
 
         root.title("Vox Commander")
         root.configure(bg=BG)
-        root.geometry("520x540")
-        root.minsize(480, 480)
+        root.geometry("520x820")
+        root.minsize(480, 720)
         try:
             root.attributes("-topmost", True)
             root.after(800, lambda: root.attributes("-topmost", False))
@@ -216,6 +218,42 @@ class Panel:
         self.status_var = tk.StringVar(value="Voice service idle. Click ACTIVATE VOICE to start.")
         tk.Label(root, textvariable=self.status_var, font=body_font, bg=BG, fg=MUTED).pack(anchor="w", padx=22)
 
+        # ----- quick actions (button grid, bypasses ElevenLabs) -----
+        actions = tk.Frame(root, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        actions.pack(fill="x", padx=20, pady=(12, 6))
+        tk.Label(actions, text="QUICK ACTIONS  ·  no voice, free", font=body_font, bg=PANEL, fg=MUTED).pack(anchor="w", padx=14, pady=(10, 4))
+
+        grid = tk.Frame(actions, bg=PANEL)
+        grid.pack(fill="x", padx=10, pady=(0, 12))
+
+        # (label, intent, args) tuples in display order
+        self.quick_actions: list[tuple[str, str, dict]] = [
+            ("Select All",     "select_all",        {}),
+            ("Deploy",         "deploy",            {}),
+            ("Build Generator","produce_structure", {"structure": "generator"}),
+            ("Build Storage",  "produce_structure", {"structure": "storage"}),
+            ("Build Factory",  "produce_structure", {"structure": "factory"}),
+            ("Build Radar",    "produce_structure", {"structure": "radar"}),
+            ("Train Miner",    "build",             {"unit": "miner", "count": 1}),
+            ("Harvest",        "harvest",           {}),
+            ("Build 5 MBT",    "build",             {"unit": "mbt", "count": 5}),
+            ("Build 3 Rifle",  "build",             {"unit": "rifleman", "count": 3}),
+            ("Attack East",    "attack_move",       {"target": "east_edge"}),
+            ("Stop",           "stop",              {}),
+        ]
+
+        for i, (label, intent, args) in enumerate(self.quick_actions):
+            row, col = divmod(i, 2)
+            btn = tk.Button(
+                grid, text=label, font=body_font,
+                bg="#1f2937", fg=FG, activebackground=ACCENT, activeforeground="white",
+                relief="flat", cursor="hand2", borderwidth=0, padx=8, pady=8,
+                command=lambda i=intent, a=args, lbl=label: self._on_quick_action(lbl, i, a),
+            )
+            btn.grid(row=row, column=col, sticky="ew", padx=4, pady=3)
+        grid.columnconfigure(0, weight=1)
+        grid.columnconfigure(1, weight=1)
+
         # ----- log tail -----
         logframe = tk.Frame(root, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
         logframe.pack(fill="both", expand=True, padx=20, pady=(10, 18))
@@ -248,6 +286,30 @@ class Panel:
         self.edit_row.pack_forget()
         self.change_btn.configure(state="normal")
         self._append_log("[panel] api key saved")
+
+    # ----- quick action buttons -----
+
+    def _on_quick_action(self, label: str, intent: str, args: dict):
+        self._append_log(f"[btn] {label} -> intent={intent} args={args}")
+        threading.Thread(
+            target=self._send_quick_action,
+            args=(label, intent, args),
+            daemon=True,
+        ).start()
+
+    def _send_quick_action(self, label: str, intent: str, args: dict):
+        port = int(self.env.get("VOX_BRIDGE_PORT", "47777"))
+        host = self.env.get("VOX_BRIDGE_HOST", "127.0.0.1")
+        try:
+            ack = send_command(intent, args, host=host, port=port, timeout=2.0)
+        except Exception as exc:
+            ack = {"ok": False, "error": f"exception: {exc}"}
+        msg = (
+            f"[btn] {label}: ok"
+            if ack.get("ok")
+            else f"[btn] {label}: FAILED ({ack.get('error') or 'unknown'})"
+        )
+        self.root.after(0, self._append_log, msg)
 
     # ----- voice service toggle -----
 
