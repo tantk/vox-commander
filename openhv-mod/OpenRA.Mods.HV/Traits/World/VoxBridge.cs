@@ -370,36 +370,61 @@ namespace OpenRA.Mods.HV.Traits
 			var structure = args.TryGetProperty("structure", out var s) ? s.GetString() : null;
 			if (structure == null) return (false, "missing_structure");
 
-			// Find a producer that can build this structure.
-			var producer = world.Actors.FirstOrDefault(a =>
-				!a.IsDead && a.Owner == p && a.TraitsImplementing<Production>().Any());
-			if (producer == null) return (false, "no_construction_yard");
-
 			// Validate structure exists in rules.
-			if (!world.Map.Rules.Actors.TryGetValue(structure.ToLowerInvariant(), out var actorInfo))
+			var name = structure.ToLowerInvariant();
+			if (!world.Map.Rules.Actors.TryGetValue(name, out var actorInfo))
 				return (false, "unknown_structure");
 			var buildingInfo = actorInfo.TraitInfoOrDefault<BuildingInfo>();
 			if (buildingInfo == null) return (false, "not_a_building");
 
-			// Queue the production. The queue takes care of cost and prerequisites; we just enqueue.
-			world.IssueOrder(Order.StartProduction(producer, structure, 1));
+			// Pick a placement origin: nearest owned building (preferring Production traits)
+			// then any owned actor, then map center as last resort.
+			var origin = ResolvePlacementOrigin();
 
-			// Find a free cell near the producer and immediately issue PlaceBuilding so the user
-			// doesn't have to click. We spiral outward; first cell that CanPlaceBuilding wins.
-			var placement = FindPlacementCell(actorInfo, buildingInfo, producer.Location);
+			// Find a free cell near the origin.
+			var placement = FindPlacementCell(actorInfo, buildingInfo, origin);
 			if (placement == null) return (false, "no_placement_cell");
 
-			// Find the ProductionQueue actor for the placement order.
-			var queueActor = producer;
-			var placeOrder = new Order("PlaceBuilding", p.PlayerActor, Target.FromCell(world, placement.Value), false)
+			// Demo cheat: spawn the actor directly instead of going through the production
+			// queue + manual placement (which requires waiting for the build timer to elapse).
+			// Free + instant. Fine for hackathon demo; revisit for "balanced" mode.
+			var initDict = new OpenRA.Primitives.TypeDictionary
 			{
-				TargetString = structure,
-				ExtraLocation = new CPos(0, 0),
-				ExtraData = queueActor.ActorID,
-				SuppressVisualFeedback = true,
+				new LocationInit(placement.Value),
+				new OwnerInit(p),
 			};
-			world.IssueOrder(placeOrder);
+			try
+			{
+				var spawned = world.CreateActor(name, initDict);
+				Log.Write("debug", $"[VoxBridge] spawned {name} at {placement.Value} (id={spawned.ActorID})");
+			}
+			catch (Exception ex)
+			{
+				Log.Write("debug", $"[VoxBridge] CreateActor({name}) failed: {ex.Message}");
+				return (false, "spawn_failed");
+			}
 			return (true, null);
+		}
+
+		CPos ResolvePlacementOrigin()
+		{
+			var p = world.LocalPlayer;
+			if (p != null)
+			{
+				var ownedBuilding = world.Actors
+					.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p)
+					.Where(a => a.TraitOrDefault<Building>() != null)
+					.OrderByDescending(a => a.TraitsImplementing<Production>().Any())
+					.FirstOrDefault();
+				if (ownedBuilding != null)
+					return ownedBuilding.Location;
+
+				var anyOwned = world.Actors.FirstOrDefault(a => !a.IsDead && a.IsInWorld && a.Owner == p);
+				if (anyOwned != null)
+					return anyOwned.Location;
+			}
+			var b = world.Map.Bounds;
+			return new CPos(b.Left + b.Width / 2, b.Top + b.Height / 2);
 		}
 
 		CPos? FindPlacementCell(ActorInfo ai, BuildingInfo bi, CPos origin)
@@ -446,9 +471,14 @@ namespace OpenRA.Mods.HV.Traits
 			if (p == null) return (false, "no_local_player");
 			var owned = world.Actors
 				.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p)
-				.Where(a => a.TraitOrDefault<Mobile>() != null || a.TraitOrDefault<Transforms>() != null)
+				.Where(a => a.TraitOrDefault<Mobile>() != null
+					|| a.TraitOrDefault<Transforms>() != null
+					|| a.TraitOrDefault<Building>() != null)
 				.ToList();
 			world.Selection.Combine(world, owned, isCombine: false, isClick: false);
+			Log.Write("debug", $"[VoxBridge] select_all selected {owned.Count} actors " +
+				$"(mobile={owned.Count(a => a.TraitOrDefault<Mobile>() != null)}, " +
+				$"buildings={owned.Count(a => a.TraitOrDefault<Building>() != null)})");
 			return owned.Count > 0 ? (true, null) : (false, "nothing_owned");
 		}
 
