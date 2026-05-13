@@ -226,20 +226,24 @@ class Panel:
         grid = tk.Frame(actions, bg=PANEL)
         grid.pack(fill="x", padx=10, pady=(0, 12))
 
-        # (label, intent, args) tuples in display order
+        # (label, intent, args) tuples in display order.
+        # Labels match the in-game build menu display names (HV calls the
+        # generator "Power Plant", the mbt "Assault Tank" etc.).
         self.quick_actions: list[tuple[str, str, dict]] = [
-            ("Select All",     "select_all",        {}),
-            ("Deploy",         "deploy",            {}),
-            ("Build Generator","produce_structure", {"structure": "generator"}),
-            ("Build Storage",  "produce_structure", {"structure": "storage"}),
-            ("Build Factory",  "produce_structure", {"structure": "factory"}),
-            ("Build Radar",    "produce_structure", {"structure": "radar"}),
-            ("Train Miner",    "build",             {"unit": "miner", "count": 1}),
-            ("Harvest",        "harvest",           {}),
-            ("Build 5 MBT",    "build",             {"unit": "mbt", "count": 5}),
-            ("Build 3 Rifle",  "build",             {"unit": "rifleman", "count": 3}),
-            ("Attack East",    "attack_move",       {"target": "east_edge"}),
-            ("Stop",           "stop",              {}),
+            ("Select All",         "select_all",        {}),
+            ("Deploy Builder",     "deploy",            {}),
+            ("Build Power Plant",  "produce_structure", {"structure": "generator"}),
+            ("Build Storage",      "produce_structure", {"structure": "storage"}),
+            ("Build Vehicle Factory", "produce_structure", {"structure": "factory"}),
+            ("Build Radar Dome",   "produce_structure", {"structure": "radar"}),
+            ("Build Mining Tower", "produce_structure", {"structure": "miner2"}),
+            ("Train Miner",        "build",             {"unit": "miner", "count": 1}),
+            ("Train 5 Assault Tank", "build",           {"unit": "mbt", "count": 5}),
+            ("Train 3 Rifleman",   "build",             {"unit": "rifleman", "count": 3}),
+            ("Harvest",            "harvest",           {}),
+            ("Attack East",        "attack_move",       {"target": "east_edge"}),
+            ("Stop",               "stop",              {}),
+            ("Pause",              "meta_pause",        {"paused": True}),
         ]
 
         for i, (label, intent, args) in enumerate(self.quick_actions):
