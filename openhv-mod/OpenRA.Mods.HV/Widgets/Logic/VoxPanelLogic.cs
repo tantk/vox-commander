@@ -67,6 +67,9 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 			Wire(widget, "VOX_BTN_BUILD_MINER",   () => Issue("build", "{\"unit\":\"miner\",\"count\":1}"));
 			Wire(widget, "VOX_BTN_ARMY_B4",       () => Issue("station_army", "{\"target\":\"B4\"}"));
 			Wire(widget, "VOX_BTN_ARMY_MIDPOINT", () => Issue("station_army", "{\"target\":\"midpoint\"}"));
+			Wire(widget, "VOX_BTN_HOLD_POSITION", () => Issue("hold_position", "{}"));
+			Wire(widget, "VOX_BTN_RALLY_B4",      () => Issue("set_rally", "{\"target\":\"B4\"}"));
+			Wire(widget, "VOX_BTN_RALLY_MIDPOINT",() => Issue("set_rally", "{\"target\":\"midpoint\"}"));
 		}
 
 		static void Wire(Widget parent, string id, Action onClick)

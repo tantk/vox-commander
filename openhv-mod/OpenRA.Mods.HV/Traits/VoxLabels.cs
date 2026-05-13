@@ -90,8 +90,11 @@ namespace OpenRA.Mods.HV.Traits
 		"micromanagement. Visibility is gated by the world-level VoxLabelManager toggle.")]
 	public class WithVoxLabelInfo : TraitInfo
 	{
-		[Desc("Color of the label text (R,G,B).")]
-		public readonly Color Color = Color.FromArgb(0xFFE8EDF3);
+		[Desc("Color for the commander's own units.")]
+		public readonly Color OwnedColor = Color.FromArgb(0xFFE8EDF3);
+
+		[Desc("Color for enemy units (so the commander can target by label).")]
+		public readonly Color EnemyColor = Color.FromArgb(0xFFFF6B6B);
 
 		[Desc("World-space offset to place the label below the actor's center.")]
 		public readonly WVec Offset = new WVec(0, 700, 0);
@@ -105,7 +108,7 @@ namespace OpenRA.Mods.HV.Traits
 	public class WithVoxLabel : IRenderAnnotations, INotifyCreated
 	{
 		readonly WithVoxLabelInfo info;
-		string name;
+		public string Name { get; private set; }
 		SpriteFont font;
 
 		public WithVoxLabel(WithVoxLabelInfo info)
@@ -117,27 +120,36 @@ namespace OpenRA.Mods.HV.Traits
 		{
 			var mgr = self.World.WorldActor.TraitOrDefault<VoxLabelManager>();
 			if (mgr != null)
-				name = mgr.AssignName(self);
+				Name = mgr.AssignName(self);
 		}
 
 		IEnumerable<IRenderable> IRenderAnnotations.RenderAnnotations(Actor self, WorldRenderer wr)
 		{
-			if (string.IsNullOrEmpty(name))
+			if (string.IsNullOrEmpty(Name))
 				yield break;
 
 			var mgr = self.World.WorldActor.TraitOrDefault<VoxLabelManager>();
 			if (mgr == null || !mgr.Enabled)
 				yield break;
 
-			if (self.World.LocalPlayer == null || self.Owner != self.World.LocalPlayer)
-				yield break;
-
 			if (self.IsDead || !self.IsInWorld)
 				yield break;
 
+			if (self.World.LocalPlayer == null)
+				yield break;
+
+			// Render labels for our units AND visible enemies (so commander can
+			// say things like "focus Bunker-1"). Skip neutrals/critters.
+			var owner = self.Owner;
+			if (owner.NonCombatant)
+				yield break;
+
+			var isFriendly = owner == self.World.LocalPlayer;
+			var color = isFriendly ? info.OwnedColor : info.EnemyColor;
+
 			font ??= Game.Renderer.Fonts[info.Font];
 
-			yield return new TextAnnotationRenderable(font, self.CenterPosition + info.Offset, 0, info.Color, name);
+			yield return new TextAnnotationRenderable(font, self.CenterPosition + info.Offset, 0, color, Name);
 		}
 
 		bool IRenderAnnotations.SpatiallyPartitionable => true;

@@ -303,6 +303,10 @@ class Panel:
             ("Army → E5",          "station_army",      {"target": "E5"}),
             ("Army → Midpoint",    "station_army",      {"target": "midpoint"}),
             ("Hold near Storage",  "station_army",      {"target": "near_storage", "aggressive": False}),
+            ("Hold Position",      "hold_position",     {}),
+            ("Rally → B4",         "set_rally",         {"target": "B4"}),
+            ("Rally → Midpoint",   "set_rally",         {"target": "midpoint"}),
+            ("Focus → Bunker-1",   "focus_fire",        {"target_label": "Bunker-1"}),
         ]
 
         for i, (label, intent, args) in enumerate(self.quick_actions):

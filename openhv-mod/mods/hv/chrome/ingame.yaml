@@ -66,7 +66,7 @@ Container@INGAME_ROOT:
 					X: 4
 					Y: 80
 					Width: 220
-					Height: 420
+					Height: 480
 					Children:
 						Label@VOX_TITLE:
 							X: 0
@@ -180,6 +180,27 @@ Container@INGAME_ROOT:
 							Width: 200
 							Height: 28
 							Text: Pause / Resume
+							Font: Bold
+						Button@VOX_BTN_HOLD_POSITION:
+							X: 10
+							Y: 396
+							Width: 200
+							Height: 28
+							Text: Hold Position
+							Font: Bold
+						Button@VOX_BTN_RALLY_B4:
+							X: 10
+							Y: 428
+							Width: 95
+							Height: 28
+							Text: Rally B4
+							Font: Bold
+						Button@VOX_BTN_RALLY_MIDPOINT:
+							X: 115
+							Y: 428
+							Width: 95
+							Height: 28
+							Text: Rally Mid
 							Font: Bold
 		Container@MENU_ROOT:
 		TooltipContainer@TOOLTIP_CONTAINER:

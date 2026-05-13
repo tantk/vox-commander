@@ -345,6 +345,9 @@ namespace OpenRA.Mods.HV.Traits
 				case "assault":           return HandleAssault();
 				case "defend":            return HandleDefend();
 				case "station_army":      return HandleStationArmy(cmd.Args);
+				case "focus_fire":        return HandleFocusFire(cmd.Args);
+				case "set_rally":         return HandleSetRally(cmd.Args);
+				case "hold_position":     return HandleHoldPosition();
 				case "toggle_grid":       return HandleToggleGrid(cmd.Args);
 				case "toggle_labels":     return HandleToggleLabels(cmd.Args);
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
@@ -892,6 +895,94 @@ namespace OpenRA.Mods.HV.Traits
 			foreach (var a in army)
 				world.IssueOrder(new Order(order, a, Target.FromCell(world, cell.Value), false));
 			Log.Write("debug", $"[VoxBridge] station_army: {army.Count} units {order} -> {target} ({cell.Value})");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleFocusFire(JsonElement args)
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var label = args.TryGetProperty("target_label", out var l) ? l.GetString() : null;
+			if (string.IsNullOrEmpty(label)) return (false, "missing_target_label");
+
+			// Find the actor whose WithVoxLabel.Name matches (case-insensitive).
+			Actor target = null;
+			foreach (var a in world.Actors)
+			{
+				if (a.IsDead || !a.IsInWorld) continue;
+				var lab = a.TraitOrDefault<WithVoxLabel>();
+				if (lab == null || string.IsNullOrEmpty(lab.Name)) continue;
+				if (string.Equals(lab.Name, label, StringComparison.OrdinalIgnoreCase))
+				{
+					target = a;
+					break;
+				}
+			}
+			if (target == null) return (false, "unknown_label");
+
+			var attackers = world.Selection.Actors
+				.Where(a => !a.IsDead && a.Owner == p)
+				.Where(a => a.TraitsImplementing<AttackBase>().Any(t => !t.IsTraitDisabled))
+				.ToList();
+			if (attackers.Count == 0)
+			{
+				// Fall back to the whole army if nothing combat-capable is selected.
+				attackers = ArmyUnits(p);
+				world.Selection.Combine(world, attackers, isCombine: false, isClick: false);
+			}
+			if (attackers.Count == 0) return (false, "no_attackers");
+
+			var tgt = Target.FromActor(target);
+			foreach (var a in attackers)
+				world.IssueOrder(new Order("Attack", a, tgt, false));
+			Log.Write("debug", $"[VoxBridge] focus_fire: {attackers.Count} units -> {label} ({target.Info.Name}#{target.ActorID})");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleSetRally(JsonElement args)
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var target = args.TryGetProperty("target", out var t) ? t.GetString() : null;
+			if (string.IsNullOrEmpty(target)) return (false, "missing_target");
+
+			var cell = ResolveLogicalCell(target);
+			if (cell == null) return (false, "unknown_target");
+
+			var rallyHosts = world.Actors
+				.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p &&
+					a.TraitOrDefault<RallyPoint>() != null)
+				.ToList();
+			if (rallyHosts.Count == 0) return (false, "no_rally_capable_buildings");
+
+			var tgt = Target.FromCell(world, cell.Value);
+			foreach (var b in rallyHosts)
+				world.IssueOrder(new Order("SetRallyPoint", b, tgt, false));
+			Log.Write("debug", $"[VoxBridge] set_rally: {rallyHosts.Count} buildings -> {target} ({cell.Value})");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleHoldPosition()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var selected = world.Selection.Actors
+				.Where(a => !a.IsDead && a.Owner == p)
+				.ToList();
+			if (selected.Count == 0) return (false, "no_selection");
+
+			// Stop the current order AND lock the unit into Defend stance so it
+			// fires on threats in range but won't chase them out of position.
+			foreach (var a in selected)
+			{
+				world.IssueOrder(new Order("Stop", a, false));
+				if (a.TraitOrDefault<AutoTarget>() != null)
+					world.IssueOrder(new Order("SetUnitStance", a, false) { ExtraData = (uint)UnitStance.Defend });
+			}
+			Log.Write("debug", $"[VoxBridge] hold_position: {selected.Count} units stopped + Defend stance");
 			return (true, null);
 		}
 

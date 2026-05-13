@@ -84,6 +84,26 @@ single short spoken acknowledgement.
 - build         args.unit (lowercase HV unit name), args.count
 - produce_structure  args.structure (lowercase HV building name) — auto-places near base
 - meta_pause    args.paused: true|false
+- focus_fire    args.target_label: friendly name of the target (e.g. "Bunker-1",
+                "Tank-3"). All combat units in the current selection (or the
+                full army if nothing combat-capable is selected) issue Attack
+                against that one enemy. Reads labels even if labels are
+                toggled off — the names exist regardless of rendering.
+                Use for "focus on the bunker", "all tanks on Tank-3", "kill
+                that one", "concentrate fire on Power-2".
+
+- set_rally     args.target: any location reference. Sets the rally point on
+                all the commander's RallyPoint-capable buildings (factory,
+                module, storage, base, outpost). Newly produced units gather
+                there. Use for "rally tanks at B4", "send new units to
+                midpoint", "factory rally to near_storage".
+
+- hold_position no args. Selected units Stop (cancel current order) AND get
+                their AutoTarget stance forced to Defend, so they don't chase
+                threats out of position but still fire on anything in range.
+                Use for "hold position", "dig in", "stand your ground",
+                "garrison this spot".
+
 - station_army  args.target: any location reference (see "Targets" below).
                 args.aggressive: true (default) uses AttackMove so units engage
                 threats along the way; false uses plain Move (don't pick fights,
