@@ -139,8 +139,8 @@ class Panel:
 
         root.title("Vox Commander")
         root.configure(bg=BG)
-        root.geometry("520x820")
-        root.minsize(480, 720)
+        root.geometry("540x720")
+        root.minsize(480, 480)
         try:
             root.attributes("-topmost", True)
             root.after(800, lambda: root.attributes("-topmost", False))
@@ -152,8 +152,36 @@ class Panel:
         mono_font = tkfont.Font(family="Consolas", size=9)
         button_font = tkfont.Font(family="Segoe UI", size=14, weight="bold")
 
+        # ----- scrollable container -----
+        outer = tk.Frame(root, bg=BG)
+        outer.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+        scrollbar = tk.Scrollbar(outer, orient="vertical", command=canvas.yview, bg=BG, troughcolor=PANEL)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
+        canvas.pack(side="left", fill="both", expand=True)
+
+        body = tk.Frame(canvas, bg=BG)
+        body_window = canvas.create_window((0, 0), window=body, anchor="nw")
+
+        def _on_body_configure(_evt):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        body.bind("<Configure>", _on_body_configure)
+
+        def _on_canvas_configure(evt):
+            canvas.itemconfig(body_window, width=evt.width)
+        canvas.bind("<Configure>", _on_canvas_configure)
+
+        def _on_mousewheel(evt):
+            canvas.yview_scroll(int(-1 * (evt.delta / 120)), "units")
+        canvas.bind_all("<MouseWheel>", _on_mousewheel)
+
+        self._canvas = canvas
+        self._scroll_unbind_target = canvas
+
         # ----- header -----
-        header = tk.Frame(root, bg=BG)
+        header = tk.Frame(body, bg=BG)
         header.pack(fill="x", padx=20, pady=(18, 4))
         tk.Label(header, text="VOX COMMANDER", font=title_font, bg=BG, fg=FG).pack(anchor="w")
         tk.Label(
@@ -163,7 +191,7 @@ class Panel:
         ).pack(anchor="w")
 
         # ----- API key card -----
-        keycard = tk.Frame(root, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        keycard = tk.Frame(body, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
         keycard.pack(fill="x", padx=20, pady=(14, 8))
 
         tk.Label(keycard, text="ELEVENLABS API KEY", font=body_font, bg=PANEL, fg=MUTED).pack(anchor="w", padx=14, pady=(10, 0))
@@ -196,7 +224,7 @@ class Panel:
         ).pack(side="right")
 
         # ----- agent id card (read-only info) -----
-        agentcard = tk.Frame(root, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        agentcard = tk.Frame(body, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
         agentcard.pack(fill="x", padx=20, pady=(4, 8))
         tk.Label(agentcard, text="AGENT", font=body_font, bg=PANEL, fg=MUTED).pack(anchor="w", padx=14, pady=(10, 0))
         agent_id = self.env.get("VOX_AGENT_ID", "")
@@ -208,7 +236,7 @@ class Panel:
 
         # ----- big activate button -----
         self.toggle_btn = tk.Button(
-            root, text="ACTIVATE VOICE", font=button_font,
+            body, text="ACTIVATE VOICE", font=button_font,
             bg=ACCENT, fg="white", activebackground=ACCENT, activeforeground="white",
             relief="flat", cursor="hand2", borderwidth=0, pady=14,
             command=self._on_toggle,
@@ -216,10 +244,10 @@ class Panel:
         self.toggle_btn.pack(fill="x", padx=20, pady=(12, 8))
 
         self.status_var = tk.StringVar(value="Voice service idle. Click ACTIVATE VOICE to start.")
-        tk.Label(root, textvariable=self.status_var, font=body_font, bg=BG, fg=MUTED).pack(anchor="w", padx=22)
+        tk.Label(body, textvariable=self.status_var, font=body_font, bg=BG, fg=MUTED).pack(anchor="w", padx=22)
 
         # ----- quick actions (button grid, bypasses ElevenLabs) -----
-        actions = tk.Frame(root, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        actions = tk.Frame(body, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
         actions.pack(fill="x", padx=20, pady=(12, 6))
         tk.Label(actions, text="QUICK ACTIONS  ·  no voice, free", font=body_font, bg=PANEL, fg=MUTED).pack(anchor="w", padx=14, pady=(10, 4))
 
@@ -272,15 +300,22 @@ class Panel:
         grid.columnconfigure(1, weight=1)
 
         # ----- log tail -----
-        logframe = tk.Frame(root, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
-        logframe.pack(fill="both", expand=True, padx=20, pady=(10, 18))
+        logframe = tk.Frame(body, bg=PANEL, highlightbackground=BORDER, highlightthickness=1)
+        logframe.pack(fill="x", padx=20, pady=(10, 18))
         tk.Label(logframe, text="LIVE LOG", font=body_font, bg=PANEL, fg=MUTED).pack(anchor="w", padx=14, pady=(8, 0))
+        # Fixed height + own scroll so the outer canvas scrollbar handles overall
+        # layout while this widget gives in-place log scrolling.
+        log_row = tk.Frame(logframe, bg=PANEL)
+        log_row.pack(fill="x", padx=8, pady=(2, 8))
         self.log_widget = tk.Text(
-            logframe, bg=PANEL, fg=FG, font=mono_font, relief="flat",
-            borderwidth=0, padx=12, pady=6, height=10, state="disabled",
+            log_row, bg=PANEL, fg=FG, font=mono_font, relief="flat",
+            borderwidth=0, padx=12, pady=6, height=12, state="disabled",
             insertbackground=FG, wrap="none",
         )
-        self.log_widget.pack(fill="both", expand=True, padx=8, pady=(2, 8))
+        log_scroll = tk.Scrollbar(log_row, orient="vertical", command=self.log_widget.yview, bg=BG, troughcolor=PANEL)
+        self.log_widget.configure(yscrollcommand=log_scroll.set)
+        log_scroll.pack(side="right", fill="y")
+        self.log_widget.pack(side="left", fill="both", expand=True)
 
         root.protocol("WM_DELETE_WINDOW", self._on_close)
 
