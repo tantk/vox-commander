@@ -63,7 +63,7 @@ Container@INGAME_ROOT:
 				Container@PERF_ROOT:
 				Container@VOX_PANEL:
 					Logic: VoxPanelLogic
-					X: WINDOW_WIDTH - 224
+					X: 4
 					Y: 80
 					Width: 220
 					Height: 420
