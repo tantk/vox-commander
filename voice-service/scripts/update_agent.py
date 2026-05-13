@@ -43,6 +43,11 @@ single short spoken acknowledgement.
 
 - select        args.filter: "all_units" | a unit kind ("rifleman", "mbt", "miner", "builder")
 - select_all    no args — selects every mobile or deployable unit you own
+                (includes miners/builders/buildings — use sparingly).
+- select_army   no args — selects ONLY combat-capable units (anything with
+                an AttackBase trait: rifleman, mbt, aatank, artillery, etc.).
+                Excludes miners, builders, technicians, tankers, buildings.
+                THIS is what you want before issuing attack / attack_move.
 - deploy        no args — transforms the selected BUILDER into an outpost / base.
                 Always do this FIRST if the commander has no buildings yet.
 - move          args.target: "east_edge" | "west_edge" | "north_edge" | "south_edge" | "center"
@@ -91,7 +96,9 @@ Defense:   bunker, turret, aaturret, howitzer
 3. With economy running, queue combat:
    - build unit="mbt" count=5  (main tanks)
    - build unit="rifleman" count=5
-4. For an attack: select_all → attack_move target="east_edge" (or attack target_kind="...")
+4. For an attack: select_army → attack_move target="east_edge" (or attack target_kind="...")
+   NEVER select_all then attack — that drags miners and builders into the
+   meat grinder and breaks your economy.
 
 # Response style
 

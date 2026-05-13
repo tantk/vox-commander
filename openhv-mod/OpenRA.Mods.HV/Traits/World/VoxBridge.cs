@@ -313,6 +313,7 @@ namespace OpenRA.Mods.HV.Traits
 			{
 				case "select":            return HandleSelect(cmd.Args);
 				case "select_all":        return HandleSelectAll();
+				case "select_army":       return HandleSelectArmy();
 				case "move":              return HandleMove(cmd.Args);
 				case "stop":              return HandleStop();
 				case "attack":            return HandleAttack(cmd.Args, attackMove: false);
@@ -656,6 +657,25 @@ namespace OpenRA.Mods.HV.Traits
 				$"(mobile={owned.Count(a => a.TraitOrDefault<Mobile>() != null)}, " +
 				$"buildings={owned.Count(a => a.TraitOrDefault<Building>() != null)})");
 			return owned.Count > 0 ? (true, null) : (false, "nothing_owned");
+		}
+
+		(bool ok, string error) HandleSelectArmy()
+		{
+			// Combat-only selection: anything owned by the player that can attack
+			// (has an AttackBase-derived trait). Filters out miners, builders,
+			// technicians, tankers, and buildings — only fielded combat units.
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var army = world.Actors
+				.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p)
+				.Where(a => a.TraitOrDefault<Mobile>() != null)
+				.Where(a => a.TraitsImplementing<AttackBase>().Any(t => !t.IsTraitDisabled))
+				.ToList();
+
+			world.Selection.Combine(world, army, isCombine: false, isClick: false);
+			Log.Write("debug", $"[VoxBridge] select_army selected {army.Count} combat units");
+			return army.Count > 0 ? (true, null) : (false, "no_army");
 		}
 
 		(bool ok, string error) HandleHarvest()
