@@ -66,12 +66,8 @@ Container@INGAME_ROOT:
 					X: WINDOW_WIDTH - 224
 					Y: 80
 					Width: 220
-					Height: 660
+					Height: 420
 					Children:
-						Background@VOX_BG:
-							Width: 220
-							Height: 660
-							Background: dialog
 						Label@VOX_TITLE:
 							X: 0
 							Y: 10
