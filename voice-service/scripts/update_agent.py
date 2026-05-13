@@ -54,6 +54,22 @@ single short spoken acknowledgement.
 - stop          no args
 - attack        args.target_ref or args.target_kind (e.g. "miner", "rifleman")
 - attack_move   same args as attack
+
+# High-level attack modes (each handles its own selection + targeting)
+
+- scout         no args. Picks our single fastest combat unit (or any non-miner
+                mobile unit if we have no army yet) and Moves it to the enemy
+                base centroid. Uses Move not AttackMove so the scout doesn't
+                pick fights along the way.
+- harass        no args. Picks 2-5 fast army units and AttackMoves them to the
+                nearest visible enemy economy actor (miner, mining tower,
+                storage, tanker). Use this for "hit and run" / "go for their
+                miners" / "raid them".
+- assault       no args. Selects the FULL army and AttackMoves it to the
+                enemy base centroid. Use for "all-in attack" / "push the base"
+                / "send everything".
+- defend        no args. Selects the army and Moves it back to our base
+                centroid. Use for "fall back" / "defend home" / "regroup".
 - harvest       no args — sends selected miner to mine ore
 - auto_mine     no args — for selected miner(s), find the nearest ore tile,
                 move there, then deploy into a Mining Tower. Also fires

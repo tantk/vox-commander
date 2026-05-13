@@ -282,14 +282,12 @@ class Panel:
             ("Train 5 Assault Tank", "build",           {"unit": "mbt", "count": 5}),
             ("Train 3 Rifleman",   "build",             {"unit": "rifleman", "count": 3}),
             ("Harvest",            "harvest",           {}),
-            ("Army → East", "__combo__", {"steps": [
-                ("select_army", {}),
-                ("attack_move", {"target": "east_edge"}),
-            ]}),
-            ("Army → West", "__combo__", {"steps": [
-                ("select_army", {}),
-                ("attack_move", {"target": "west_edge"}),
-            ]}),
+            # --- attack modes (handle selection + targeting internally) ---
+            ("Scout Enemy",        "scout",             {}),
+            ("Harass Enemy",       "harass",            {}),
+            ("Full Assault",       "assault",           {}),
+            ("Defend Base",        "defend",            {}),
+            # --- low-level fallback ---
             ("Attack East (selected)", "attack_move",   {"target": "east_edge"}),
             ("Stop",               "stop",              {}),
             ("Pause / Resume",     "meta_pause",        {}),

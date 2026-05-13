@@ -323,6 +323,10 @@ namespace OpenRA.Mods.HV.Traits
 				case "harvest":           return HandleHarvest();
 				case "deploy":            return HandleDeploy();
 				case "auto_mine":         return HandleAutoMine();
+				case "scout":             return HandleScout();
+				case "harass":            return HandleHarass();
+				case "assault":           return HandleAssault();
+				case "defend":            return HandleDefend();
 				case "toggle_labels":     return HandleToggleLabels(cmd.Args);
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
@@ -519,6 +523,141 @@ namespace OpenRA.Mods.HV.Traits
 			}
 			return null;
 		}
+
+		// ----- attack modes -----
+
+		List<Actor> ArmyUnits(Player p) => world.Actors
+			.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p)
+			.Where(a => a.TraitOrDefault<Mobile>() != null)
+			.Where(a => a.TraitsImplementing<AttackBase>().Any(t => !t.IsTraitDisabled))
+			.ToList();
+
+		CPos? EnemyBaseCentroid(Player p)
+		{
+			var cells = world.Actors
+				.Where(a => !a.IsDead && a.IsInWorld &&
+					a.Owner != p && !a.Owner.NonCombatant &&
+					a.TraitOrDefault<Building>() != null)
+				.Select(a => a.Location)
+				.ToList();
+			if (cells.Count == 0) return null;
+			int sx = 0, sy = 0;
+			foreach (var c in cells) { sx += c.X; sy += c.Y; }
+			return new CPos(sx / cells.Count, sy / cells.Count);
+		}
+
+		CPos? FriendlyBaseCentroid(Player p)
+		{
+			var cells = world.Actors
+				.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p &&
+					a.TraitOrDefault<Building>() != null)
+				.Select(a => a.Location)
+				.ToList();
+			if (cells.Count == 0) return null;
+			int sx = 0, sy = 0;
+			foreach (var c in cells) { sx += c.X; sy += c.Y; }
+			return new CPos(sx / cells.Count, sy / cells.Count);
+		}
+
+		Actor FindEnemyEconomyActor(Player p)
+		{
+			// Anything that produces value for the enemy: miners, mining towers,
+			// storages (refineries), tankers.
+			var econNames = new[] { "miner", "miner2", "storage", "tanker1" };
+			return world.Actors.FirstOrDefault(a =>
+				!a.IsDead && a.IsInWorld &&
+				a.Owner != p && !a.Owner.NonCombatant &&
+				System.Array.IndexOf(econNames, a.Info.Name.ToLowerInvariant()) >= 0);
+		}
+
+		(bool ok, string error) HandleScout()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var target = EnemyBaseCentroid(p);
+			if (target == null) return (false, "no_enemy_base_visible");
+
+			// Pick our single fastest combat unit; fall back to any non-miner mobile
+			// unit if we have no army yet.
+			Actor scout = ArmyUnits(p)
+				.OrderByDescending(a => a.TraitOrDefault<Mobile>()?.Info.Speed ?? 0)
+				.FirstOrDefault();
+			if (scout == null)
+			{
+				scout = world.Actors
+					.Where(a => !a.IsDead && a.IsInWorld && a.Owner == p)
+					.Where(a => a.TraitOrDefault<Mobile>() != null && !IsMiner(a))
+					.OrderByDescending(a => a.TraitOrDefault<Mobile>()?.Info.Speed ?? 0)
+					.FirstOrDefault();
+			}
+			if (scout == null) return (false, "no_scout_available");
+
+			world.Selection.Combine(world, new[] { scout }, isCombine: false, isClick: false);
+			world.IssueOrder(new Order("Move", scout, Target.FromCell(world, target.Value), false));
+			Log.Write("debug", $"[VoxBridge] scout: {scout.Info.Name}#{scout.ActorID} -> {target.Value}");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleHarass()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var econ = FindEnemyEconomyActor(p);
+			if (econ == null) return (false, "no_enemy_economy_visible");
+
+			var army = ArmyUnits(p);
+			if (army.Count == 0) return (false, "no_army");
+
+			// Take ~half the army, clamped to [2, 5]. Smallest viable raiding force.
+			var size = System.Math.Min(System.Math.Max(2, army.Count / 2), 5);
+			var force = army.Take(size).ToList();
+
+			world.Selection.Combine(world, force, isCombine: false, isClick: false);
+			foreach (var a in force)
+				world.IssueOrder(new Order("AttackMove", a, Target.FromActor(econ), false));
+			Log.Write("debug", $"[VoxBridge] harass: {force.Count} units -> {econ.Info.Name}#{econ.ActorID}");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleAssault()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var army = ArmyUnits(p);
+			if (army.Count == 0) return (false, "no_army");
+
+			var target = EnemyBaseCentroid(p);
+			if (target == null) return (false, "no_enemy_base_visible");
+
+			world.Selection.Combine(world, army, isCombine: false, isClick: false);
+			foreach (var a in army)
+				world.IssueOrder(new Order("AttackMove", a, Target.FromCell(world, target.Value), false));
+			Log.Write("debug", $"[VoxBridge] assault: {army.Count} units -> {target.Value}");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleDefend()
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var army = ArmyUnits(p);
+			if (army.Count == 0) return (false, "no_army");
+
+			var home = FriendlyBaseCentroid(p);
+			if (home == null) return (false, "no_friendly_base");
+
+			world.Selection.Combine(world, army, isCombine: false, isClick: false);
+			foreach (var a in army)
+				world.IssueOrder(new Order("Move", a, Target.FromCell(world, home.Value), false));
+			Log.Write("debug", $"[VoxBridge] defend: {army.Count} units -> {home.Value}");
+			return (true, null);
+		}
+
+		// ----- auto-mining -----
 
 		(bool ok, string error) HandleAutoMine()
 		{
