@@ -1,0 +1,1349 @@
+# License: CC-BY-SA-4.0
+
+^ExistsInWorld:
+	AppearsOnRadar:
+	CombatDebugOverlay:
+	GivesExperience:
+		PlayerExperienceModifier: 1
+	ScriptTriggers:
+	RenderDebugState:
+	DebugOffsetOverlay:
+
+^SpriteActor:
+	BodyOrientation:
+		UseClassicPerspectiveFudge: false
+	QuantizeFacingsFromSequence:
+	RenderSprites:
+		PlayerPalette: green
+
+^Selectable:
+	Selectable:
+	DrawLineToTarget:
+		LineWidth: 2
+		QueuedLineWidth: 2
+		MarkerWidth: 3
+		QueuedMarkerWidth: 3
+
+^SelectableCombatUnit:
+	Inherits: ^Selectable
+	Selectable:
+		Priority: 10
+		PriorityModifiers: Ctrl
+
+^SelectableEconomicUnit:
+	Inherits: ^Selectable
+	Selectable:
+		Priority: 6
+		PriorityModifiers: Ctrl, Alt
+
+^SelectableSupportUnit:
+	Inherits: ^Selectable
+	Selectable:
+		Priority: 8
+		PriorityModifiers: Ctrl, Alt
+
+^SelectionDecorations:
+	CustomSelectionDecorations:
+	WithTextControlGroupDecoration:
+
+^PlayerHandicaps:
+	HandicapFirepowerMultiplier:
+	HandicapDamageMultiplier:
+
+^Cloakable:
+	Cloak@ExternalCloak:
+		RequiresCondition: crate-cloak
+		InitialDelay: 0
+		CloakDelay: 90
+		IsPlayerPalette: true
+		UncloakOn: Attack, Unload, Demolish, Damage, Heal
+		CloakedPalette: cloak
+		CloakStyle: Palette
+	ExternalCondition@CrateCloak:
+		Condition: crate-cloak
+
+^Parachutable:
+	Parachutable:
+		FallRate: 26
+		KilledOnImpassableTerrain: true
+		ParachutingCondition: parachute
+	Targetable:
+		RequiresCondition: !parachute
+	WithParachute:
+		Image: parachute
+		Sequence: idle
+		OpeningSequence: opening
+		ClosingSequence: closing
+		Offset: 0,-200,200
+		RequiresCondition: parachute
+
+^Husk:
+	Interactable:
+	Health:
+		HP: 28000
+	Armor:
+		Type: Heavy
+	HiddenUnderFog:
+		Type: CenterPosition
+		AlwaysVisibleRelationships: None
+	ScriptTriggers:
+	WithFacingSpriteBody:
+	HitShape:
+	MapEditorData:
+		Categories: Husk
+
+^Hackable:
+	Hackable:
+		Condition: hacked
+	WithHackedConnectionArc:
+		UsePlayerColor: true
+		Offset: 0,512,960
+	Targetable@SecurityVulnerability:
+		TargetTypes: Vulnerability
+		RequiresCondition: !hacked
+
+^Vehicle:
+	WithVoxLabel:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	Inherits@Selection: ^SelectableCombatUnit
+	Inherits@Decoration: ^SelectionDecorations
+	Inherits@Shield: ^ForceFieldCompatible
+	Inherits@ECM: ^Jammable
+	Inherits@Cloak: ^Cloakable
+	Inherits@Parachute: ^Parachutable
+	Inherits@DamageSparks: ^PixelDamageSparks
+	Inherits@Reconstructor: ^ReconstructorHeal
+	Inherits@Handicaps: ^PlayerHandicaps
+	Inherits@Vulnerabilities: ^Hackable
+	Huntable:
+	OwnerLostAction:
+		Action: Kill
+	UpdatesPlayerStatistics:
+	Mobile:
+		Locomotor: wheeled
+		TurnSpeed: 20
+		Voice: Move
+	Teleportable:
+	TeleportNetworkTransportable:
+	WithTeleportEnergyOverlay:
+		Image: energyball
+		Sequence: teleport
+	Selectable:
+		Bounds: 1024, 1024
+	Targetable:
+		TargetTypes: Ground, Vehicle
+	Targetable@Repair:
+		RequiresCondition: damaged
+		TargetTypes: DamagedVehicle
+	Targetable@Disabled:
+		RequiresCondition: jammed
+		TargetTypes: DisabledVehicle
+	TemporaryOwnerManager:
+	GrantConditionOnDamageState@Damaged:
+		Condition: damaged
+		ValidDamageStates: Light, Medium, Heavy, Critical
+	Repairable:
+		RepairActors: trader
+		HpPerStep: 2000
+	AttackMove:
+	HiddenUnderFog:
+	ProximityCaptor:
+		Types: Vehicle
+	Guard:
+		Voice: Guard
+	Guardable:
+	Tooltip:
+		GenericName: meta-vehicle-generic-name
+	MustBeDestroyed:
+	WithFacingSpriteBody:
+	BodyOrientation:
+	HitShape:
+	MapEditorData:
+		Categories: Vehicle
+	Voiced:
+		VoiceSet: GenericVoice3
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeMedium
+		EmptyWeapon: UnitExplodeMedium
+	SpawnScrapOnDeath:
+		Actors: scrap1, scrap2, scrap3, scrap4, scrap5
+		TerrainTypes: Clear, Crater, Road, Grass, Grass Pit, Mountain, Snow, Red Snow, Sand, Black Sand, Stone, Tech
+	ActorLostNotification:
+		TextNotification: notification-unit-lost
+	Carryable:
+	AnnounceOnSeen:
+		Notification: EnemyUnitsDetected
+		TextNotification: notification-enemy-units-detected
+	Passenger:
+		CargoType: Vehicle
+		Weight: 5
+
+^Pod:
+	Inherits: ^Vehicle
+	Mobile:
+		TurnSpeed: 100
+		Speed: 80
+		Locomotor: pod
+		Voice: Move
+	Voiced:
+		VoiceSet: GenericVoice2
+	Health:
+		HP: 15000
+	Armor:
+		Type: None
+	Passenger:
+		CargoType: Pod
+		Weight: 1
+	-Carryable:
+	-SpawnScrapOnDeath:
+	-FireWarheadsOnDeath:
+	WithDeathAnimation:
+		UseDeathTypeSuffix: false
+		DeathSequencePalette: green
+		FallbackSequence: die
+	Crushable:
+		RequiresCondition: !shield
+		CrushClasses: Pods
+		WarnProbability: 15
+	RevealsShroud:
+		Range: 4c0
+		MinRange: 2c0
+		RevealGeneratedShroud: False
+	RevealsShroud@Hacked:
+		Range: 2c0
+	-Repairable:
+	RepairableNear:
+		RepairActors: module, module2
+		CloseEnough: 2c0
+	Targetable@Repair:
+		RequiresCondition: damaged
+		TargetTypes: DamagedPod
+	Selectable:
+		Bounds: 512,512,0,0
+	HitShape:
+		Type: Circle
+			Radius: 256
+	GrantConditionOnTerrain@Forest:
+		TerrainTypes: Plant
+		Condition: concealed
+	Cloak@Foliage:
+		RequiresCondition: concealed
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeSmall
+		EmptyWeapon: UnitExplodeSmall
+
+^Scrap:
+	Interactable:
+	HiddenUnderFog:
+	Tooltip:
+		Name: meta-scrap.name
+		GenericName: meta-scrap.generic-name
+		ShowOwnerRow: false
+	Collectible:
+		Duration: 6000
+		TerrainTypes: Clear, Crater, Road, Grass, Grass Pit, Mountain, Snow, Red Snow, Sand, Black Sand, Stone, Tech, Rail, Dirt
+		CrushClass: Scrap
+	RenderSprites:
+		Palette: terrain
+		PlayerPalette:
+	WithSpriteBody:
+	BodyOrientation:
+		QuantizedFacings: 1
+	CollectScrapCrateAction:
+	ScrapValue:
+	MapEditorData:
+		Categories: System
+	WithShadow:
+		Offset: 128,128,0
+		ZOffset: -512
+
+^TrackedVehicle:
+	Inherits: ^Vehicle
+	Mobile:
+		Locomotor: tracked
+
+^Plane:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	Inherits@Selection: ^SelectableCombatUnit
+	Inherits@Decoration: ^SelectionDecorations
+	Inherits@Shield: ^ForceFieldCompatible
+	Inherits@Reconstructor: ^ReconstructorHeal
+	Inherits@Handicaps: ^PlayerHandicaps
+	Huntable:
+	OwnerLostAction:
+		Action: Kill
+	Armor:
+		Type: Light
+	UpdatesPlayerStatistics:
+	AppearsOnRadar:
+		UseLocation: true
+	Selectable:
+		Bounds: 1024, 1024
+	Aircraft:
+		AirborneCondition: airborne
+		CruiseAltitude: 2c0
+		InitialFacing: 768
+		Voice: Move
+		TakeOffOnResupply: true
+		LandAltitude: 0c64
+	Targetable@Ground:
+		RequiresCondition: !airborne
+		TargetTypes: Ground, Vehicle
+	Targetable@Airborne:
+		RequiresCondition: airborne
+		TargetTypes: Air
+	HiddenUnderFog:
+		Type: GroundPosition
+	Guard:
+		Voice: Guard
+	Guardable:
+	ProximityCaptor:
+		Types: Plane
+	Tooltip:
+		GenericName: meta-plane-generic-name
+	WithShadow:
+		Offset: 356, 256, 0
+		ZOffset: -256
+	WithFacingSpriteBody:
+	MustBeDestroyed:
+	HitShape:
+	Repairable:
+		RepairActors: trader
+		HpPerStep: 2000
+	MapEditorData:
+		Categories: Aircraft
+	Repairable:
+		RepairActors: trader
+	ActorLostNotification:
+		TextNotification: notification-unit-lost
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeSmall
+		EmptyWeapon: UnitExplodeSmall
+	GrantRandomCondition@SpawnPilot:
+		Conditions: spawn-pilot, dont-spawn-pilot
+	FireWarheadsOnDeath@SpawnPilot:
+		Weapon: PilotSpawn
+		EmptyWeapon: PilotSpawn
+		RequiresCondition: spawn-pilot && !dont-spawn-pilot
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeMedium
+		EmptyWeapon: UnitExplodeMedium
+
+^PlaneHusk:
+	Inherits@Husk: ^Husk
+	Inherits@Sprite: ^SpriteActor
+	WithShadow:
+		Offset: 43, 128, 0
+		ZOffset: -129
+	Tooltip:
+		GenericName: meta-planehusk-generic-name
+	Aircraft:
+	FallsToEarth:
+		Moves: true
+		Velocity: 86
+		Explosion: UnitExplodeSmall
+		MaximumSpinSpeed: 0
+	-MapEditorData:
+	RevealOnDeath:
+		Duration: 60
+		Radius: 4c0
+
+^SpawnedPlane:
+	Inherits: ^Plane
+	-Selectable:
+	Interactable:
+	-ActorLostNotification:
+	RejectsOrders:
+	-GrantRandomCondition@SpawnPilot:
+	-FireWarheadsOnDeath@SpawnPilot:
+	Aircraft:
+		IdleBehavior: None
+		Repulsable: False
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeSmall
+		EmptyWeapon: UnitExplodeSmall
+
+^CargoPlane:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	OwnerLostAction:
+		Action: Kill
+	AppearsOnRadar:
+		UseLocation: true
+	HiddenUnderFog:
+		Type: GroundPosition
+		AlwaysVisibleRelationships: None
+	WithShadow:
+		Offset: 356, 256, 0
+		ZOffset: -256
+	WithFacingSpriteBody:
+	RejectsOrders:
+	Interactable:
+	Aircraft:
+		Repulsable: False
+		IdleBehavior: LeaveMap
+	MapEditorData:
+		Categories: Aircraft
+	UpdatesPlayerStatistics:
+		AddToAssetsValue: false
+	HiddenUnderFog:
+		AlwaysVisibleRelationships: None
+		Type: CenterPosition
+	DamageMultiplier@Invulnerable:
+		Modifier: 0
+
+^DropPod:
+	Inherits: ^Plane
+	Valued:
+		Cost: 10
+	Tooltip:
+		Name: meta-droppod-name
+	Health:
+		HP: 6000
+	Armor:
+		Type: Light
+	Aircraft:
+		TurnSpeed: 20
+		Speed: 300
+		CruiseAltitude: 16c0
+		MaximumPitch: 110
+		LandableTerrainTypes: Clear, Ore, Crater, Road, Grass, Grass Pit, Mountain, Ice, Snow, Red Snow, Sand, Black Sand, Stone, Tech, Rail, Blocked, Dirt
+	HiddenUnderFog:
+		Type: CenterPosition
+	BodyOrientation:
+	-WithFacingSpriteBody:
+	WithSpriteBody:
+	HitShape:
+	-Selectable:
+	Interactable:
+	Targetable:
+		TargetTypes: NoAutoTarget
+	-ActorLostNotification:
+	RenderSprites:
+		Image: droppod
+	WithShadow:
+	FallsToEarth:
+		Explosion:
+		Moves: true
+		Velocity: 768
+		MaximumSpinSpeed: 0
+	SpawnActorOnDeath@Pod:
+		Actor: landedpod
+	FireWarheadsOnDeath:
+		Weapon: DropPodImpact
+		EmptyWeapon: DropPodImpact
+	RenderSprites:
+		PlayerPalette: green
+	AmbientSound:
+		SoundFiles: droppodlanding_dudeawesome.ogg
+
+^Helicopter:
+	Inherits: ^Plane
+	Tooltip:
+		GenericName: meta-helicopter-generic-name
+	Aircraft:
+		CanHover: true
+		CruisingCondition: cruising
+		WaitDistanceFromResupplyBase: 4c0
+		VTOL: true
+		InitialFacing: 896
+		CanSlide: True
+	Hovers@Cruising:
+		RequiresCondition: cruising
+		BobDistance: -64
+		InitialHeight: 64
+		FallTicks: 8
+		RiseTicks: 8
+	BodyOrientation:
+
+^1x1Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -512, -512
+			BottomRight: 512, 512
+^1x2Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -512, -1024
+			BottomRight: 512, 1024
+
+^2x1Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -1024, -512
+			BottomRight: 1024, 512
+
+^2x2Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -1024, -1024
+			BottomRight: 1024, 1024
+
+^2x3Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -1024, -1536
+			BottomRight: 1024, 1536
+
+^2x4Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -1024, -2048
+			BottomRight: 1024, 2048
+
+^3x3Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -1536, -1536
+			BottomRight: 1536, 1536
+
+^6x8Shape:
+	HitShape:
+		UseTargetableCellsOffsets: true
+		Type: Rectangle
+			TopLeft: -3072, -4096
+			BottomRight: 3072, 4096
+
+^Building:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	Inherits@Decoration: ^SelectionDecorations
+	Inherits@Shield: ^ForceFieldCompatible
+	Huntable:
+	OwnerLostAction:
+		Action: Kill
+	Selectable:
+		Priority: 3
+	Targetable:
+		TargetTypes: Ground, Structure
+	Armor:
+		Type: Steel
+	Health:
+		HP: 40000
+	Building:
+		Footprint: x
+	ActorPreviewPlaceBuildingPreview:
+		PreviewAlpha: 0.40
+	WithSpriteBody:
+	WithIdleOverlay@Shadow:
+		Sequence: shadow-overlay
+		Palette: shadow
+		IsDecoration: true
+	Guardable:
+		Range: 3c0
+	Tooltip:
+		GenericName: meta-building-generic-name
+	FrozenUnderFog:
+	MapEditorData:
+		Categories: Building
+	CommandBarBlacklist:
+	FireProjectilesOnDeath:
+		Weapons: Debris
+		Pieces: 5, 10
+		Range: 1c512, 4c0
+	FireProjectilesOnDeath@Large:
+		Weapons: LargeDebris
+		Pieces: 0, 1
+		Range: 1c512, 4c0
+	UpdatesPlayerStatistics:
+	FireWarheadsOnDeath:
+		Type: Footprint
+		Weapon: BuildingExplode
+		EmptyWeapon: BuildingExplode
+	ShakeOnDeath:
+	RepairableBuilding:
+		RepairPercent: 40
+		RepairStep: 1000
+		PlayerExperience: 15
+		RepairingNotification: Repairing
+		RepairingTextNotification: notifications-repairing
+	WithBuildingRepairDecoration:
+		Image: repair
+		Sequence: idle
+		Position: Center
+	CaptureManager:
+		BeingCapturedCondition: being-captured
+	Capturable:
+		Types: building
+	CapturableProgressBar:
+	CapturableProgressBlink:
+	CapturableProgressBeep:
+		Sound: beep_matrixxx.ogg
+	CaptureNotification:
+		TextNotification: notification-building-captured
+	AcceptsDeliveredCash:
+
+^BaseBuilding:
+	WithVoxLabel:
+	Inherits: ^Building
+	Inherits@Handicaps: ^PlayerHandicaps
+	WithIdleOverlay@Shadow:
+		RequiresCondition: !build-incomplete
+	WithMakeAnimation:
+		Condition: build-incomplete
+	WithConstructionBeamOverlay:
+		RequiresCondition: !build-incomplete
+		Condition: beam-incomplete
+	Capturable:
+		RequiresCondition: !build-incomplete && !beam-incomplete
+	Building:
+		RequiresBaseProvider: true
+		TerrainTypes: Clear, Road, Crater, Grass, Grass Pit, Snow, Red Snow, Sand, Black Sand, Stone, Tech, Rail, Dirt
+		AllowInvalidPlacement: false
+		BuildSounds: Freqman_fx376.ogg
+	RequiresBuildableArea:
+		AreaTypes: building
+		Adjacent: 4
+	MustBeDestroyed:
+		RequiredForShortGame: true
+	GivesBuildableArea:
+		AreaTypes: building
+	Sellable:
+		RequiresCondition: !being-captured && !build-incomplete && !beam-incomplete
+		SellSounds: Freqman_fx376-reverse.ogg
+		Notification: BuildingSold
+	BotRepairOrSellCaptures:
+	ActorLostNotification:
+		Notification: BuildingLost
+		TextNotification: notification-building-lost
+
+^DefenseBuilding:
+	Inherits: ^BaseBuilding
+	Inherits@Disable: ^DisableOnLowPowerOrPowerDown
+	Inherits@Shape: ^2x1Shape
+	Inherits@Flame: ^BuildingFlame
+	Selectable:
+		Bounds: 2048, 1536, 0, -256
+	Buildable:
+		Queue: Defense
+	Building:
+		Footprint: == xx
+		Dimensions: 2,2
+		LocalCenterOffset: 0,512,0
+	HitShape:
+		Type: Rectangle
+			TopLeft: -756, -512
+			BottomRight: 756, 512
+	Targetable:
+		TargetTypes: Ground, Structure, Defense
+	Armor:
+		Type: Steel
+	RevealsShroud:
+		Range: 8c0
+		MinRange: 4c0
+		RevealGeneratedShroud: False
+		RequiresCondition: !build-incomplete && !beam-incomplete
+	RevealsShroud@Offline:
+		RequiresCondition: !disabled
+		Range: 5c0
+		RevealGeneratedShroud: False
+	RevealsShroud@Hacked:
+		Range: 4c0
+	Power:
+		Amount: -60
+	RenderSprites:
+		PlayerPalette: green
+	Capturable:
+		RequiresCondition: !build-incomplete && !beam-incomplete
+	-CommandBarBlacklist:
+	DetectCloaked:
+		Range: 5c0
+
+^Prop:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	Interactable:
+	Targetable:
+		TargetTypes: Ground, Structure
+	Armor:
+		Type: Steel
+	Health:
+		HP: 40000
+	Building:
+		Dimensions: 1,1
+		Footprint: x
+	FrozenUnderFog:
+	Tooltip:
+		GenericName: meta-prop-generic-name
+		ShowOwnerRow: false
+	MapEditorData:
+		Categories: Decoration
+	CommandBarBlacklist:
+	FireProjectilesOnDeath:
+		Weapons: Debris
+		Pieces: 5, 10
+		Range: 1c512, 4c0
+	FireProjectilesOnDeath@Large:
+		Weapons: LargeDebris
+		Pieces: 0, 1
+		Range: 1c512, 4c0
+	FireWarheadsOnDeath:
+		Type: Footprint
+		Weapon: BuildingExplode
+		EmptyWeapon: BuildingExplode
+	ShakeOnDeath:
+	WithSpriteBody:
+	WithIdleOverlay@Shadow:
+		Sequence: shadow-overlay
+		Palette: shadow
+		IsDecoration: true
+
+^Crate:
+	Inherits@Exists: ^ExistsInWorld
+	Interactable:
+		Bounds: 1024, 102
+	Targetable:
+		TargetTypes: Ground, Structure
+	Armor:
+		Type: Steel
+	Health:
+		HP: 1000
+	Building:
+		Dimensions: 1,1
+		Footprint: x
+	FrozenUnderFog:
+	Tooltip:
+		Name: meta-crate.name
+		GenericName: meta-crate.generic-name
+		ShowOwnerRow: false
+	MapEditorData:
+		Categories: Crates
+	CommandBarBlacklist:
+	FireWarheadsOnDeath:
+		Type: Footprint
+		Weapon: BuildingExplode
+		EmptyWeapon: BuildingExplode
+	WithSpriteBody:
+	BodyOrientation:
+		QuantizedFacings: 1
+	WithShadow:
+		Offset: 128,128,0
+		ZOffset: -512
+	RenderSprites:
+		Palette: terrain
+
+^DisableOnLowPower:
+	WithColoredOverlay@Disable:
+		RequiresCondition: disabled
+		Color: 000000B4
+	GrantConditionOnPowerState@LowPower:
+		Condition: lowpower
+		ValidPowerStates: Low, Critical
+	GrantCondition@Disable:
+		RequiresCondition: lowpower
+		Condition: disabled
+
+^DisableOnLowPowerOrPowerDown:
+	Inherits: ^DisableOnLowPower
+	GrantConditionOnSell:
+		Condition: selling
+	GrantCondition@Disable:
+		RequiresCondition: (lowpower || powerdown) && !selling
+		Condition: disabled
+	ToggleConditionOnOrder:
+		Condition: powerdown
+		OrderName: PowerDown
+	WithDecoration@PowerDown:
+		Image: poweroff
+		Sequence: offline
+		Palette: chrome
+		RequiresCondition: powerdown && !selling
+		Position: Center
+		Offsets:
+			repairing: 10, 0
+	PowerMultiplier@PowerDown:
+		RequiresCondition: powerdown && !selling
+		Modifier: 0
+	RepairableBuilding:
+		RepairCondition: repairing
+		RepairingTextNotification: notifications-repairing
+	WithBuildingRepairDecoration:
+		Offsets:
+			powerdown: -10, 0
+	ProvidesPrerequisite@BuildingName:
+		RequiresCondition: !powerdown
+
+^AutoTargetGround:
+	AutoTarget:
+		AttackAnythingCondition: stance-attackanything
+		MinimumScanTimeInterval: 5
+		MaximumScanTimeInterval: 15
+	AutoTargetPriority@Default:
+		RequiresCondition: !stance-attackanything
+		ValidTargets: Vehicle, Defense, Ship, Mine
+		InvalidTargets: NoAutoTarget
+	AutoTargetPriority@AttackAnything:
+		RequiresCondition: stance-attackanything
+		ValidTargets: Vehicle, Defense, Ship, Mine, Structure
+		InvalidTargets: NoAutoTarget
+
+^AutoTargetGroundAssaultMove:
+	Inherits: ^AutoTargetGround
+	AutoTargetPriority@Default:
+		RequiresCondition: !stance-attackanything && !assault-move
+	AutoTargetPriority@AttackAnything:
+		RequiresCondition: stance-attackanything || assault-move
+	AttackMove:
+		AssaultMoveCondition: assault-move
+
+^AutoTargetAir:
+	AutoTarget:
+		AttackAnythingCondition: stance-attackanything
+		MinimumScanTimeInterval: 5
+		MaximumScanTimeInterval: 15
+	AutoTargetPriority@Default:
+		RequiresCondition: !stance-attackanything
+		ValidTargets: Air
+		InvalidTargets: NoAutoTarget
+	AutoTargetPriority@AttackAnything:
+		RequiresCondition: stance-attackanything
+		ValidTargets: Air
+		InvalidTargets: NoAutoTarget
+
+^AutoTargetAirAssaultMove:
+	Inherits: ^AutoTargetAir
+	AutoTargetPriority@Default:
+		RequiresCondition: !stance-attackanything && !assault-move
+	AutoTargetPriority@AttackAnything:
+		RequiresCondition: stance-attackanything || assault-move
+	AttackMove:
+		AssaultMoveCondition: assault-move
+
+^AutoTargetAll:
+	AutoTarget:
+		AttackAnythingCondition: stance-attackanything
+		MinimumScanTimeInterval: 5
+		MaximumScanTimeInterval: 15
+	AutoTargetPriority@Default:
+		RequiresCondition: !stance-attackanything
+		ValidTargets: Vehicle, Air, Ship, Mine, Defense
+		InvalidTargets: NoAutoTarget
+	AutoTargetPriority@AttackAnything:
+		RequiresCondition: stance-attackanything
+		ValidTargets: Vehicle, Air, Ship, Mine, Defense, Structure
+		InvalidTargets: NoAutoTarget
+
+^AutoTargetAllAssaultMove:
+	Inherits: ^AutoTargetAll
+	AutoTargetPriority@Default:
+		RequiresCondition: !stance-attackanything && !assault-move
+	AutoTargetPriority@AttackAnything:
+		RequiresCondition: stance-attackanything || assault-move
+	AttackMove:
+		AssaultMoveCondition: assault-move
+
+^Rock:
+	Inherits@Sprite: ^SpriteActor
+	Interactable:
+	Tooltip:
+		Name: meta-rock-name
+		ShowOwnerRow: false
+	RenderSprites:
+		Palette: terrain
+	WithSpriteBody:
+	Building:
+		Footprint: _ x
+		Dimensions: 1,2
+	AppearsOnRadar:
+	RadarColorFromTerrain:
+		Terrain: Rock
+	AppearsOnMapPreview:
+		Terrain: Rock
+	HiddenUnderShroud:
+	MapEditorData:
+		Categories: Decoration
+	RequiresSpecificOwners:
+		ValidOwnerNames: Neutral
+	WithIdleOverlay@Shadow:
+		Sequence: shadow-overlay
+		Palette: shadow-decoration
+		IsDecoration: true
+
+^ForceFieldCompatible:
+	WithColoredOverlay@ForceField:
+		RequiresCondition: shield
+		Color: 00008080
+	DamageMultiplier@ForceField:
+		RequiresCondition: shield
+		Modifier: 25
+	TimedConditionBar:
+		Condition: shield
+		Color: 0000FF
+	ExternalCondition@ForceField:
+		Condition: shield
+
+^Tree:
+	Inherits@Shape: ^1x1Shape
+	Interactable:
+		Bounds: 1024, 1024
+	Tooltip:
+		Name: meta-tree-name
+		ShowOwnerRow: false
+	Building:
+		Footprint: x
+		Dimensions: 1,1
+	Health:
+		HP: 100000
+	Armor:
+		Type: Wood
+	Targetable:
+		TargetTypes: Tree
+	BodyOrientation:
+		QuantizedFacings: 1
+	HiddenUnderShroud:
+	MapEditorData:
+		Categories: Decoration
+	RequiresSpecificOwners:
+		ValidOwnerNames: Neutral
+	SpawnActorOnDeath@Ash:
+		DeathType: Fire
+	Crushable:
+		CrushClasses: Tree
+		WarnProbability: 0
+		CrushedByFriendlies: true
+	SpawnActorOnDeath@Crush:
+		DeathType: Crush
+	GrantConditionOnDamageState:
+		Condition: burning
+		ValidDamageStates: Medium, Heavy, Critical
+	RenderSprites:
+		Palette: terrain
+	WithDamagedOverlay:
+		Image: fire
+		Sequence: flame
+		MinimumDamageState: Medium
+	PeriodicDischarge:
+		Weapon: ForestFire
+		RequiresCondition: burning
+	WithSpriteBody:
+	RadarColorFromTerrain:
+		Terrain: Plant
+	AppearsOnMapPreview:
+		Terrain: Plant
+	WithIdleOverlay@Shadow:
+		Sequence: shadow-overlay
+		Palette: shadow-decoration
+		IsDecoration: true
+
+^Cactus:
+	Inherits: ^Tree
+	Tooltip:
+		Name: meta-cactus-name
+	Building:
+		Footprint: x
+		Dimensions: 1,1
+	SpawnActorOnDeath@Crush:
+		Actor: CACTIMUD
+	SpawnActorOnDeath@Ash:
+		Actor: CACTIASH
+
+^Ship:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	Inherits@Selection: ^SelectableCombatUnit
+	Inherits@Decoration: ^SelectionDecorations
+	Inherits@Shield: ^ForceFieldCompatible
+	Inherits@DamageSparks: ^PixelDamageSparks
+	Inherits@Reconstructor: ^ReconstructorHeal
+	Inherits@Handicaps: ^PlayerHandicaps
+	Huntable:
+	OwnerLostAction:
+		Action: Kill
+	UpdatesPlayerStatistics:
+	Mobile:
+		Locomotor: naval
+		Voice: Move
+	Teleportable:
+	Selectable:
+		Bounds: 1024, 1024
+	Targetable:
+		TargetTypes: Ground, Water, Ship
+	HiddenUnderFog:
+	AttackMove:
+	ProximityCaptor:
+		Types: Ship
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeMedium
+		EmptyWeapon: UnitExplodeMedium
+	Guard:
+		Voice: Guard
+	Guardable:
+	Tooltip:
+		GenericName: meta-ship-generic-name
+	MustBeDestroyed:
+	MapEditorData:
+		Categories: Naval
+	Voiced:
+		VoiceSet: ShipVoice
+	WithFacingSpriteBody:
+	HitShape:
+	Repairable:
+		RepairActors: harbor, harbor2
+	LeavesTrails:
+		Image: watertrail
+		MovingInterval: 4
+		StartDelay: 4
+		Type: CenterPosition
+		TerrainTypes: Littoral, Pelagic, Oceanic, Rapids
+
+^Submarine:
+	Inherits: ^Ship
+	Cloak:
+		DetectionTypes: Underwater
+		InitialDelay: 0
+		CloakDelay: 100
+		CloakedCondition: underwater
+		CloakSound: submarine_out_szegvari.ogg
+		UncloakSound: submarine_in_szegvari.ogg
+		CloakedPalette: shadow
+		PauseOnCondition: cloak-force-disabled
+		CloakStyle: Palette
+	GrantConditionOnDamageState@Uncloak:
+		Condition: cloak-force-disabled
+		ValidDamageStates: Critical, Heavy
+	LeavesTrails:
+		RequiresCondition: !underwater
+	SpeedMultiplier@Surfaced:
+		Modifier: 75
+		RequiresCondition: !underwater
+
+^Cube:
+	Interactable:
+	HiddenUnderFog:
+	Tooltip:
+		Name: meta-cube.name
+		GenericName: meta-cube.generic-name
+		ShowOwnerRow: false
+	Collectible:
+		Duration: 6000
+		TerrainTypes: Clear, Crater, Road, Grass, Grass Pit, Mountain
+		CrushClass: Cube
+	RenderSprites:
+		Palette: cube
+		Image: cube
+	WithSpriteBody:
+		Sequence: grey
+	BodyOrientation:
+		QuantizedFacings: 1
+	MapEditorData:
+		Categories: System
+
+^Wall:
+	Inherits@Exists: ^ExistsInWorld
+	Building:
+		Dimensions: 1,2
+		Footprint: x x
+		TerrainTypes: Clear, Road, Crater, Grass, Grass Pit
+	Tooltip:
+		Name: meta-wall-name
+	-GivesExperience:
+	RenderSprites:
+		Palette: effect
+		Image: wall
+	WithSpriteBody:
+	BodyOrientation:
+		QuantizedFacings: 1
+	FrozenUnderFog:
+	BlocksProjectiles:
+	RadarColorFromTerrain:
+		Terrain: Road
+	AppearsOnMapPreview:
+		Terrain: Road
+	MapEditorData:
+		Categories: Wall
+	OwnerLostAction:
+		Action: ChangeOwner
+	Targetable:
+		TargetTypes: NoAutoTarget
+
+^Mine:
+	Inherits: ^SpriteActor
+	Selectable:
+		Bounds: 1024, 1024
+		Priority: 5
+	HiddenUnderFog:
+	Mine:
+		CrushClasses: Mine
+		DetonateClasses: Mine
+		BlockFriendly: false
+	Health:
+		HP: 10000
+		NotifyAppliedDamage: false
+	Armor:
+		Type: Light
+	FireWarheadsOnDeath:
+		Weapon: AntiTankMine
+		EmptyWeapon: UnitExplodeSmall
+	Cloak:
+		UncloakOn: Attack
+		DetectionTypes: Mine
+		InitialDelay: 0
+		CloakStyle: None
+	Targetable:
+		TargetTypes: Ground, Mine
+	Immobile:
+		OccupiesSpace: true
+	HitShape:
+	MapEditorData:
+		Categories: System
+	KillsSelf:
+		RequiresCondition: triggered
+	GrantConditionOnDeploy:
+		DeployedCondition: triggered
+
+^Jammable:
+	WithColoredOverlay@Jammed:
+		RequiresCondition: jammed
+		Color: 000000B4
+	TimedConditionBar@Jammed:
+		Condition: jammed
+		Color: 00FF00
+	ExternalCondition@Jammed:
+		Condition: jammed
+	Mobile:
+		PauseOnCondition: jammed
+	Targetable@ECM:
+		TargetTypes: Jammable
+		RequiresCondition: !jammed
+
+^BuildingFlame:
+	GrantConditionOnDamageState:
+		Condition: burning
+		ValidDamageStates: Heavy, Critical
+	WithIdleOverlay@Burns:
+		IsDecoration: true
+		Sequence: flame
+		Palette: effect
+		RequiresCondition: burning
+
+^BuildingFlame2:
+	Inherits: ^BuildingFlame
+	WithIdleOverlay@Burns2:
+		IsDecoration: true
+		Sequence: flame2
+		Palette: effect
+		RequiresCondition: burning
+
+^BuildingFlame3:
+	Inherits: ^BuildingFlame2
+	WithIdleOverlay@Burns3:
+		IsDecoration: true
+		Sequence: flame3
+		Palette: effect
+		RequiresCondition: burning
+
+^PixelDamageSparks:
+	GrantConditionOnDamageState:
+		Condition: throw-sparks
+		ValidDamageStates: Heavy, Critical
+	SpawnsShrapnel@DamageSparks:
+		RequiresCondition: throw-sparks
+		Weapon: DamageSpark
+		Amount: 6
+		Delay: 192, 384
+
+^SmokeEmitter:
+	GrantConditionOnDamageState:
+		Condition: emits-smoke
+		ValidDamageStates: Heavy, Critical
+	FloatingSpriteEmitter@Smoke:
+		RequiresCondition: emits-smoke
+		Palette: effect
+		Image: smoke
+		Sequences: idle
+		Lifetime: 8
+		Speed: 10
+		Gravity: 80
+		SpawnFrequency: 4, 8
+		RandomFacing: true
+		RandomRate: 4
+		Offset: 0, 0, 200
+		TurnRate: 3
+		Duration: -1
+
+^ReconstructorHeal:
+	ChangesHealth@Reconstructor:
+		PercentageStep: 1
+		Step: 0
+		Delay: 150
+		StartIfBelow: 100
+		DamageCooldown: 125
+		RequiresCondition: reconstructor
+	WithDecoration@Reconstructor:
+		Image: pips
+		Sequence: pip-reconstructor
+		Palette: chrome
+		Position: TopRight
+		RequiresCondition: reconstructor
+		ValidRelationships: Ally
+	GrantConditionOnPrerequisite@Reconstructor:
+		Condition: reconstructor
+		Prerequisites: reconstructor
+
+^DropShellCasing:
+	SpawnsShrapnel@shell:
+		Weapon: ShellCasing
+		RequiresCondition: shell
+	GrantConditionOnAttack@shell:
+		Condition: shell
+		ArmamentNames: primary
+		RevokeDelay: 1
+
+^DropMagazineCasing:
+	SpawnsShrapnel@magazine:
+		Weapon: ShellCasing
+		RequiresCondition: magazine
+	GrantConditionOnBurstComplete@magazine:
+		Condition: magazine
+		ArmamentNames: primary
+		RevokeDelay: 1
+
+^ShootableMissile:
+	Inherits@Exists: ^ExistsInWorld
+	Inherits@Sprite: ^SpriteActor
+	WithMissileSpriteBody:
+	-GivesExperience:
+	Armor:
+		Type: Missile
+	BallisticMissile:
+		AirborneCondition: airborne
+	Targetable@Ground:
+		RequiresCondition: !airborne
+		TargetTypes: Ground, Vehicle
+	Targetable@Airborne:
+		RequiresCondition: airborne
+		TargetTypes: Air
+	HiddenUnderFog:
+		Type: GroundPosition
+	HitShape:
+	RejectsOrders:
+	Interactable:
+
+^GATE:
+	Inherits: ^Building
+	Inherits@Handicaps: ^PlayerHandicaps
+	Building:
+		RequiresBaseProvider: true
+		TerrainTypes: Clear, Road, Crater, Grass, Grass Pit, Snow, Red Snow, Sand, Black Sand, Stone, Tech, Dirt
+		AllowInvalidPlacement: false
+		BuildSounds: Freqman_fx376-gate.ogg
+	Buildable:
+		BuildPaletteOrder: 15
+		Queue: Defense
+		Prerequisites: module, !bots
+		Description: meta-gate.description
+	Replacement:
+		ReplaceableTypes: wall
+	Valued:
+		Cost: 300
+	Health:
+		HP: 75000
+	Armor:
+		Type: Concrete
+	LineBuildNode:
+	MustBeDestroyed:
+		RequiredForShortGame: false
+	-WithSpriteBody:
+	-WithIdleOverlay@Shadow:
+	GrantConditionOnLineBuildConnection:
+		Edges: 0,-1, 0,3
+		FirstCondition: top
+		LastCondition: bottom
+	WithGateSpriteBody@Connected:
+		Name: connected
+		OpenSequence: open
+		RequiresCondition: top && bottom
+	WithGateSpriteBody@Standalone:
+		Name: standalone
+		Sequence: idle-alone
+		OpenSequence: open-alone
+		RequiresCondition: !top && !bottom
+	WithGateSpriteBody@Top:
+		Name: top
+		Sequence: idle-top
+		OpenSequence: open-top
+		RequiresCondition: top && !bottom
+	WithGateSpriteBody@Bottom:
+		Name: bottom
+		Sequence: idle-bottom
+		OpenSequence: open-bottom
+		RequiresCondition: !top && bottom
+	Tooltip:
+		Name: meta-gate.name
+	RequiresBuildableArea:
+		AreaTypes: building
+		Adjacent: 6
+	Targetable:
+		TargetTypes: Ground, Wall, NoAutoTarget
+	MapEditorData:
+		Categories: Wall
+	RevealsShroud:
+		Range: 2c0
+	Gate:
+		OpeningSound: lowpolygon_gate-in.ogg
+		ClosingSound: lowpolygon_gate-out.ogg
+	BlocksProjectiles:
+	OwnerLostAction:
+		Action: ChangeOwner
+	FireProjectilesOnDeath:
+		Weapons: Debris
+		Pieces: 2, 3
+		Range: 1c512, 3c0
+	FireProjectilesOnDeath@Large:
+		Weapons: LargeDebris
+		Pieces: 0, 1
+		Range: 1c512, 3c0
+	FireWarheadsOnDeath:
+		Weapon: UnitExplodeLarge
+		EmptyWeapon: UnitExplodeLarge
+	-ShakeOnDeath:
+	WithConstructionBeamOverlay:
+	UpdatesPlayerStatistics:
+		AddToAssetsValue: false
+	Sellable:
+		SellSounds: Quedicemipez_teleportation-barrier-sell.ogg
+	CaptureManager:
+		-BeingCapturedCondition: being-captured
+
+^MINIPOD:
+	Inherits: ^Pod
+	Valued:
+		Cost: 100
+	Tooltip:
+		Name: meta-minipod.name
+		GenericName: meta-minipod.generic-name
+	Health:
+		HP: 10000
+	Mobile:
+		TurnSpeed: 100
+		Speed: 80
+		Voice: Move
+	RevealsShroud:
+		Range: 5c0
+	WithDeathAnimation:
+		FallbackSequence: die
+	Wanders:
+		WanderMoveRadius: 1
+		MinMoveDelay: 250
+		MaxMoveDelay: 1000
+	ScaredyCat:
+		PanicSpeedModifier: 150
+		PanicChance: 80
+		PanicSequencePrefix:
+	-Guard:
+	-MustBeDestroyed:
+	MapEditorData:
+		Categories: Civilians
+	Selectable:
+		Bounds: 512, 512
+	Voiced:
+		VoiceSet: CivilianVoice

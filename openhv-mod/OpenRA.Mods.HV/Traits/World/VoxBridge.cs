@@ -307,6 +307,7 @@ namespace OpenRA.Mods.HV.Traits
 				case "harvest":           return HandleHarvest();
 				case "deploy":            return HandleDeploy();
 				case "auto_mine":         return HandleAutoMine();
+				case "toggle_labels":     return HandleToggleLabels(cmd.Args);
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
 				default:                  return (false, "unknown_intent");
@@ -602,6 +603,23 @@ namespace OpenRA.Mods.HV.Traits
 			if (selected.Count == 0) return (false, "no_selection");
 			foreach (var a in selected)
 				world.IssueOrder(new Order("Harvest", a, false));
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleToggleLabels(JsonElement args)
+		{
+			var mgr = world.WorldActor.TraitOrDefault<VoxLabelManager>();
+			if (mgr == null) return (false, "label_manager_missing");
+
+			// If args.visible is present, set it explicitly; otherwise flip.
+			if (args.TryGetProperty("visible", out var v) && v.ValueKind == JsonValueKind.True)
+				mgr.Enabled = true;
+			else if (args.TryGetProperty("visible", out var v2) && v2.ValueKind == JsonValueKind.False)
+				mgr.Enabled = false;
+			else
+				mgr.Enabled = !mgr.Enabled;
+
+			Log.Write("debug", $"[VoxBridge] labels now {(mgr.Enabled ? "ON" : "OFF")}");
 			return (true, null);
 		}
 

@@ -254,6 +254,7 @@ class Panel:
             ("Attack East",        "attack_move",       {"target": "east_edge"}),
             ("Stop",               "stop",              {}),
             ("Pause",              "meta_pause",        {"paused": True}),
+            ("Toggle Labels",      "toggle_labels",     {}),
         ]
 
         for i, (label, intent, args) in enumerate(self.quick_actions):

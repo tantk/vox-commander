@@ -57,6 +57,11 @@ single short spoken acknowledgement.
 - build         args.unit (lowercase HV unit name), args.count
 - produce_structure  args.structure (lowercase HV building name) — auto-places near base
 - meta_pause    args.paused: true|false
+- toggle_labels args.visible: true|false (optional — if omitted, flips).
+                Shows/hides the friendly-name labels under each of the
+                commander's owned units, e.g. "Tank-1", "Miner-3", etc.
+                Use when the commander says "show labels" / "hide labels"
+                / "show me the units" / "turn off labels".
 
 # OpenHV unit names (lowercase, what to put in args.unit)
 

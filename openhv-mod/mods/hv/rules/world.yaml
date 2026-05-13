@@ -6,6 +6,7 @@
 	Selection:
 	VoxBridge:
 		Port: 47777
+	VoxLabelManager:
 	ControlGroups:
 	MusicPlaylist:
 		VictoryMusic: the struggle loop
