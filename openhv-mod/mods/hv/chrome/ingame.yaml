@@ -61,6 +61,128 @@ Container@INGAME_ROOT:
 					Y: 40
 				Container@PLAYER_ROOT:
 				Container@PERF_ROOT:
+				Container@VOX_DEMO_PANEL:
+					Logic: VoxDemoPanelLogic
+					X: 240
+					Y: 80
+					Width: 230
+					Height: 540
+					Children:
+						Label@VOX_DEMO_TITLE:
+							X: 0
+							Y: 6
+							Width: 230
+							Height: 18
+							Text: DEMO BEATS
+							Align: Center
+							Font: Bold
+							Contrast: true
+						Button@VOX_DEMO_BTN_01:
+							X: 8
+							Y: 30
+							Width: 214
+							Height: 26
+							Text: 1. Status Report
+							Font: Bold
+						Button@VOX_DEMO_BTN_02:
+							X: 8
+							Y: 60
+							Width: 214
+							Height: 26
+							Text: 2. Build Units
+							Font: Bold
+						Button@VOX_DEMO_BTN_03:
+							X: 8
+							Y: 90
+							Width: 214
+							Height: 26
+							Text: 3. Pan to Enemy
+							Font: Bold
+						Button@VOX_DEMO_BTN_04:
+							X: 8
+							Y: 120
+							Width: 214
+							Height: 26
+							Text: 4. Airstrike E5
+							Font: Bold
+						Button@VOX_DEMO_BTN_05:
+							X: 8
+							Y: 150
+							Width: 214
+							Height: 26
+							Text: 5. Hold C3
+							Font: Bold
+						Button@VOX_DEMO_BTN_06:
+							X: 8
+							Y: 180
+							Width: 214
+							Height: 26
+							Text: 6. Focus Bunker-1
+							Font: Bold
+						Button@VOX_DEMO_BTN_07:
+							X: 8
+							Y: 210
+							Width: 214
+							Height: 26
+							Text: 7. Full Assault
+							Font: Bold
+						Button@VOX_DEMO_BTN_08:
+							X: 8
+							Y: 240
+							Width: 214
+							Height: 26
+							Text: 8. Pull Back
+							Font: Bold
+						Button@VOX_DEMO_BTN_09:
+							X: 8
+							Y: 270
+							Width: 214
+							Height: 26
+							Text: 9. Rally D4
+							Font: Bold
+						Button@VOX_DEMO_BTN_10:
+							X: 8
+							Y: 300
+							Width: 214
+							Height: 26
+							Text: 10. Final Assault
+							Font: Bold
+						Button@VOX_DEMO_BTN_11:
+							X: 8
+							Y: 336
+							Width: 214
+							Height: 26
+							Text: 11. Standard Opening
+							Font: Bold
+						Button@VOX_DEMO_BTN_12:
+							X: 8
+							Y: 366
+							Width: 214
+							Height: 26
+							Text: 12. Select Army
+							Font: Bold
+						Button@VOX_DEMO_BTN_13:
+							X: 8
+							Y: 396
+							Width: 214
+							Height: 26
+							Text: 13. Show Grid
+							Font: Bold
+						Button@VOX_DEMO_BTN_14:
+							X: 8
+							Y: 426
+							Width: 214
+							Height: 26
+							Text: 14. Pause Game
+							Font: Bold
+						Label@VOX_DEMO_HELP:
+							X: 8
+							Y: 460
+							Width: 214
+							Height: 70
+							Text: Each button plays the matching commander voice line and fires the equivalent game command. Click in sequence to drive a hands-off demo.
+							Font: Tiny
+							Align: Left
 				Container@VOX_PANEL:
 					Logic: VoxPanelLogic
 					X: 4
