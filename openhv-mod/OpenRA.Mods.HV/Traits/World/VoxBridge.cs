@@ -206,7 +206,10 @@ namespace OpenRA.Mods.HV.Traits
 			if (listener == null) return;
 
 			if (tickCount == 0)
+			{
 				Log.Write("debug", "[VoxBridge] first tick fired");
+				DumpPlayersAndOwners();
+			}
 
 			if (!startEmitted && activeWriter != null)
 			{
@@ -313,6 +316,18 @@ namespace OpenRA.Mods.HV.Traits
 				world.IssueOrder(placeOrder);
 				Log.Write("debug", $"[VoxBridge] auto-placed {current.Item} at {cell.Value}");
 			}
+		}
+
+		void DumpPlayersAndOwners()
+		{
+			foreach (var pl in world.Players)
+				Log.Write("debug", $"[VoxBridge] player '{pl.InternalName}' Bot={(pl.IsBot ? pl.BotType : "<none>")} NonCombatant={pl.NonCombatant} Spectating={pl.Spectating} local={pl == world.LocalPlayer}");
+
+			var byOwner = world.Actors
+				.Where(a => !a.IsDead && a.TraitOrDefault<Building>() != null)
+				.GroupBy(a => a.Owner.InternalName);
+			foreach (var g in byOwner)
+				Log.Write("debug", $"[VoxBridge] buildings owned by '{g.Key}': {g.Count()} -> {string.Join(",", g.Select(x => x.Info.Name).Distinct())}");
 		}
 
 		public void Disposing(Actor self)

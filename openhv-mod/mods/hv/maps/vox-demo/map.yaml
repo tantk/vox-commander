@@ -64,10 +64,16 @@ Actors:
 		Location: 30,21
 	M0Generator1: generator
 		Owner: Multi0
-		Location: 18,18
+		Location: 15,18
 	M0Generator2: generator
 		Owner: Multi0
+		Location: 18,18
+	M0Generator3: generator
+		Owner: Multi0
 		Location: 33,18
+	M0Generator4: generator
+		Owner: Multi0
+		Location: 36,18
 	M0Tank1: mbt
 		Owner: Multi0
 		Facing: 512
@@ -108,10 +114,16 @@ Actors:
 		Location: 30,50
 	M1Generator1: generator
 		Owner: Multi1
-		Location: 18,53
+		Location: 15,53
 	M1Generator2: generator
 		Owner: Multi1
+		Location: 18,53
+	M1Generator3: generator
+		Owner: Multi1
 		Location: 33,53
+	M1Generator4: generator
+		Owner: Multi1
+		Location: 36,53
 	M1Tank1: mbt
 		Owner: Multi1
 		Facing: 0
