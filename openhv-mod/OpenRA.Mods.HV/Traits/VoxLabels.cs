@@ -24,11 +24,22 @@ namespace OpenRA.Mods.HV.Traits
 
 	[TraitLocation(SystemActors.World)]
 	[Desc("Holds Vox Commander label visibility + per-kind counter. Attach to the world actor.")]
-	public class VoxLabelManagerInfo : TraitInfo<VoxLabelManager> { }
+	public class VoxLabelManagerInfo : TraitInfo
+	{
+		[Desc("Whether unit labels are visible at world load.")]
+		public readonly bool DefaultEnabled = false;
+
+		public override object Create(ActorInitializer init) => new VoxLabelManager(this);
+	}
 
 	public class VoxLabelManager
 	{
-		public bool Enabled { get; set; } = true;
+		public bool Enabled { get; set; }
+
+		public VoxLabelManager(VoxLabelManagerInfo info)
+		{
+			Enabled = info.DefaultEnabled;
+		}
 		readonly Dictionary<string, int> counters = new Dictionary<string, int>();
 
 		public string AssignName(Actor self)

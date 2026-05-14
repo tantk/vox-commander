@@ -34,7 +34,7 @@ namespace OpenRA.Mods.HV.Traits
 		public readonly int Rows = 6;
 
 		[Desc("Whether the grid is visible at world load.")]
-		public readonly bool DefaultEnabled = true;
+		public readonly bool DefaultEnabled = false;
 
 		public override object Create(ActorInitializer init) => new VoxGridManager(this);
 	}
