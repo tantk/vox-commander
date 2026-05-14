@@ -221,7 +221,21 @@ def main() -> int:
             "agent": {
                 "prompt": {
                     "prompt": SYSTEM_PROMPT,
+                    # gpt-5-mini chosen per the terminalmart project's validated
+                    # config: strong tool-calling at a fraction of gpt-5 cost.
+                    # Native to ElevenLabs (no Custom LLM endpoint needed).
+                    "llm": "gpt-5-mini",
+                    # 0.2 prevents the "past-tense hallucinated tool call" failure
+                    # mode terminalmart documented at 0.4. Reliability > phrasing
+                    # variety for an action-driving voice agent.
+                    "temperature": 0.2,
                 },
+            },
+            # Generous turn config so the commander can pause mid-order to think
+            # without the agent prematurely treating silence as turn-end.
+            "turn": {
+                "turn_timeout": 15,
+                "silence_end_call_timeout": 60,
             },
         },
     }

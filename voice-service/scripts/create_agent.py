@@ -129,7 +129,8 @@ BODY = {
             "speed": 1.05,
         },
         "turn": {
-            "turn_timeout": 4,
+            "turn_timeout": 15,
+            "silence_end_call_timeout": 60,
             "turn_eagerness": "normal",
         },
         "conversation": {
@@ -139,9 +140,12 @@ BODY = {
             "first_message": "XO online. Awaiting orders, commander.",
             "language": "en",
             "prompt": {
-                "llm": "gemini-2.5-flash",
+                # gpt-5-mini: cost-effective + strong tool calling, per the
+                # terminalmart project's validated config.
+                "llm": "gpt-5-mini",
                 "prompt": SYSTEM_PROMPT,
-                "temperature": 0.3,
+                # 0.2: prevents hallucinated past-tense tool calls.
+                "temperature": 0.2,
                 "tools": TOOLS,
             },
         },
