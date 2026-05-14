@@ -261,6 +261,47 @@ BODY = {
 }
 
 
+AGENT_NAME = BODY.get("name", "Vox XO")
+
+
+def list_agents(api_key: str) -> list[dict]:
+    """List all agents in the workspace, paginated."""
+    headers = {"xi-api-key": api_key}
+    agents: list[dict] = []
+    cursor: str | None = None
+    while True:
+        params = {"page_size": 100}
+        if cursor:
+            params["cursor"] = cursor
+        resp = httpx.get(
+            "https://api.elevenlabs.io/v1/convai/agents",
+            headers=headers, params=params, timeout=30.0,
+        )
+        if resp.status_code >= 400:
+            print(f"[create-agent] list HTTP {resp.status_code}: {resp.text}", file=sys.stderr)
+            return agents
+        data = resp.json()
+        agents.extend(data.get("agents") or [])
+        cursor = data.get("next_cursor")
+        if not cursor:
+            break
+    return agents
+
+
+def delete_agent(api_key: str, agent_id: str) -> bool:
+    headers = {"xi-api-key": api_key}
+    resp = httpx.delete(
+        f"https://api.elevenlabs.io/v1/convai/agents/{agent_id}",
+        headers=headers, timeout=30.0,
+    )
+    if resp.status_code == 404:
+        return True  # already gone, fine
+    if resp.status_code >= 400:
+        print(f"[create-agent] delete {agent_id} HTTP {resp.status_code}: {resp.text}", file=sys.stderr)
+        return False
+    return True
+
+
 def main() -> int:
     api_key = os.environ.get("ELEVENLABS_API_KEY")
     if not api_key:
@@ -273,6 +314,21 @@ def main() -> int:
     if not api_key:
         print("ELEVENLABS_API_KEY not set; aborting.", file=sys.stderr)
         return 1
+
+    # Idempotency: any pre-existing agent named AGENT_NAME gets deleted first
+    # so we end up with exactly ONE Vox XO regardless of how many times this
+    # script has been run.
+    print(f"[create-agent] sweeping for existing '{AGENT_NAME}' agents...")
+    existing = [a for a in list_agents(api_key) if a.get("name") == AGENT_NAME]
+    if existing:
+        for a in existing:
+            aid = a.get("agent_id") or a.get("id")
+            if not aid:
+                continue
+            ok = delete_agent(api_key, aid)
+            print(f"[create-agent] deleted {aid} ({'ok' if ok else 'FAILED'})")
+    else:
+        print(f"[create-agent] no pre-existing '{AGENT_NAME}' found.")
 
     url = "https://api.elevenlabs.io/v1/convai/agents/create"
     headers = {"xi-api-key": api_key, "Content-Type": "application/json"}
