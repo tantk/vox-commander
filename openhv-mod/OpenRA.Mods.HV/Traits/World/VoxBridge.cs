@@ -1098,12 +1098,14 @@ namespace OpenRA.Mods.HV.Traits
 			}
 
 			// 2) Friendly-building references: "near_storage", "near_radar", etc.
+			// Fuzzy match: "near_base" finds any actor whose Info.Name STARTS
+			// WITH "base", so HV's base2 / outpost2 / module2 variants count.
 			if (@ref.StartsWith("near_", StringComparison.OrdinalIgnoreCase) && world.LocalPlayer != null)
 			{
 				var kind = @ref.Substring(5).ToLowerInvariant();
 				var bldg = world.Actors.FirstOrDefault(a =>
 					!a.IsDead && a.IsInWorld && a.Owner == world.LocalPlayer &&
-					a.Info.Name.Equals(kind, StringComparison.OrdinalIgnoreCase));
+					a.Info.Name.StartsWith(kind, StringComparison.OrdinalIgnoreCase));
 				if (bldg != null) return bldg.Location;
 			}
 
