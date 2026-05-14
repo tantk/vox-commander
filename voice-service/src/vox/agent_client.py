@@ -27,9 +27,39 @@ class AgentClient:
         client = ElevenLabs(api_key=api_key)
 
         client_tools = ClientTools(loop=self.loop)
-        client_tools.register("dispatch_command", self.tools.dispatch_command, is_async=True)
-        client_tools.register("read_state",       self.tools.read_state,       is_async=True)
-        client_tools.register("set_pause",        self.tools.set_pause,        is_async=True)
+        # Focused tools — one registration per intent. The agent's tool
+        # schema is now per-action with typed args, so gpt-5-mini reliably
+        # fills required fields (target / target_label / unit / etc.)
+        # instead of sending {} on the old mega-tool.
+        t = self.tools
+        # Attack modes (no args)
+        client_tools.register("assault",          t.assault,          is_async=True)
+        client_tools.register("harass",           t.harass,           is_async=True)
+        client_tools.register("scout",            t.scout,            is_async=True)
+        client_tools.register("defend",           t.defend,           is_async=True)
+        client_tools.register("hold_position",    t.hold_position,    is_async=True)
+        # Targeted attacks
+        client_tools.register("focus_fire",       t.focus_fire,       is_async=True)
+        client_tools.register("attack_kind",      t.attack_kind,      is_async=True)
+        # Movement
+        client_tools.register("station_army",     t.station_army,     is_async=True)
+        client_tools.register("move_selection",   t.move_selection,   is_async=True)
+        client_tools.register("stop",             t.stop,             is_async=True)
+        # Selection
+        client_tools.register("select_army",      t.select_army,      is_async=True)
+        client_tools.register("select",           t.select,           is_async=True)
+        # Production
+        client_tools.register("build",            t.build,            is_async=True)
+        client_tools.register("produce_structure", t.produce_structure, is_async=True)
+        client_tools.register("deploy",           t.deploy,           is_async=True)
+        client_tools.register("auto_mine",        t.auto_mine,        is_async=True)
+        client_tools.register("harvest",          t.harvest,          is_async=True)
+        client_tools.register("set_rally",        t.set_rally,        is_async=True)
+        # Meta
+        client_tools.register("read_state",       t.read_state,       is_async=True)
+        client_tools.register("set_pause",        t.set_pause,        is_async=True)
+        client_tools.register("toggle_grid",      t.toggle_grid,      is_async=True)
+        client_tools.register("toggle_labels",    t.toggle_labels,    is_async=True)
 
         self.conv = Conversation(
             client,

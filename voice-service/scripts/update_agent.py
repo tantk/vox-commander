@@ -27,6 +27,16 @@ def read_env() -> dict[str, str]:
     return out
 
 
+_HERE = Path(__file__).resolve().parent
+# Reuse the tool definitions from create_agent.py so prompt + tools stay
+# in sync. If create_agent.py grows a tool, update_agent.py picks it up.
+import importlib.util as _ilu
+_spec = _ilu.spec_from_file_location("vox_create_agent", _HERE / "create_agent.py")
+_mod = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_mod)
+TOOLS = _mod.TOOLS
+
+
 SYSTEM_PROMPT = """\
 You are the executive officer (XO) of a commander playing OpenHV — an
 open-source real-time strategy game (Hard Vacuum). The commander gives
@@ -38,19 +48,39 @@ If the commander mentions ANY tactical action — even mixed with
 chit-chat, even as a side-clause, even framed as a question — you
 MUST call the matching tool BEFORE verbalising anything. Examples:
 
-- "Launch an assault. Hello, are you there?" → call dispatch_command
-  with intent="assault", THEN say "Assaulting, commander."
-- "Maybe send the army east?" → call station_army target="east_edge".
-- "I think we should attack now." → call assault.
-- "Can you build me five tanks?" → call build unit="mbt" count=5.
+- "Launch an assault. Hello, are you there?" → call assault(), THEN
+  say "Assaulting, commander."
+- "Maybe send the army east?" → call station_army(target="east_edge").
+- "I think we should attack now." → call assault().
+- "Can you build me five tanks?" → call build(unit="mbt", count=5).
 
 NEVER just verbalise the action without calling the tool. Confirming
 verbally without firing the tool means the order never reaches the
 game and units don't move. This is the most common failure mode.
 
 Plain questions with no embedded order (e.g. "How are we doing?",
-"What's the situation?") still get a tool call — read_state — before
-you verbalise.
+"What's the situation?") still get a tool call — read_state() —
+before you verbalise.
+
+# Location vocabulary (for `target` arguments)
+
+Use one of these EXACT values; if the commander uses an unfamiliar
+landmark (e.g. "the bridge"), ASK which grid square they mean.
+
+- Battleship grid: A1, A2, ... F6 (6x6 grid; columns A-F, rows 1-6)
+- Map edges: east_edge, west_edge, north_edge, south_edge, center
+- Semantic: base, enemy_base, midpoint
+- Near friendly building: near_storage, near_factory, near_radar,
+  near_module, near_outpost
+
+# Unit labels (for focus_fire target_label)
+
+Friendly labels are ALWAYS Prefix-Number with a hyphen — e.g.
+"Tank-2", "Bunker-1", "Power-3", "Rifle-4". When the commander says
+"Tank 2" / "Outpost 3" / "RT2", convert to the hyphenated form
+before calling focus_fire (Tank-2, Outpost-3, ...). If the prefix
+isn't a real unit type (e.g. "RT"), ask the commander to repeat
+using a label visible on screen.
 
 # Tools
 
@@ -216,23 +246,19 @@ def main() -> int:
     url = f"https://api.elevenlabs.io/v1/convai/agents/{agent_id}"
     headers = {"xi-api-key": api_key, "Content-Type": "application/json"}
 
+    # NOTE: Tools cannot be PATCHed inline through this endpoint — ElevenLabs
+    # treats them as separate Tool documents tracked by id, and a PATCH expects
+    # those ids to match existing documents. For tool changes, re-run
+    # create_agent.py to mint a fresh agent (and update VOX_AGENT_ID in .env).
     body = {
         "conversation_config": {
             "agent": {
                 "prompt": {
                     "prompt": SYSTEM_PROMPT,
-                    # gpt-5-mini chosen per the terminalmart project's validated
-                    # config: strong tool-calling at a fraction of gpt-5 cost.
-                    # Native to ElevenLabs (no Custom LLM endpoint needed).
                     "llm": "gpt-5-mini",
-                    # 0.2 prevents the "past-tense hallucinated tool call" failure
-                    # mode terminalmart documented at 0.4. Reliability > phrasing
-                    # variety for an action-driving voice agent.
                     "temperature": 0.2,
                 },
             },
-            # Generous turn config so the commander can pause mid-order to think
-            # without the agent prematurely treating silence as turn-end.
             "turn": {
                 "turn_timeout": 15,
                 "silence_end_call_timeout": 60,

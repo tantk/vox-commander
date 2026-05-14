@@ -932,14 +932,20 @@ namespace OpenRA.Mods.HV.Traits
 			var label = args.TryGetProperty("target_label", out var l) ? l.GetString() : null;
 			if (string.IsNullOrEmpty(label)) return (false, "missing_target_label");
 
-			// Find the actor whose WithVoxLabel.Name matches (case-insensitive).
+			// Find the actor whose WithVoxLabel.Name matches. Match is forgiving:
+			// "Outpost 3" / "outpost3" / "OUTPOST-3" all normalise to "outpost-3"
+			// for comparison so the LLM doesn't have to nail the exact format.
+			static string Normalize(string s) =>
+				new string((s ?? "").Where(c => !char.IsWhiteSpace(c) && c != '-').ToArray()).ToLowerInvariant();
+
+			var needle = Normalize(label);
 			Actor target = null;
 			foreach (var a in world.Actors)
 			{
 				if (a.IsDead || !a.IsInWorld) continue;
 				var lab = a.TraitOrDefault<WithVoxLabel>();
 				if (lab == null || string.IsNullOrEmpty(lab.Name)) continue;
-				if (string.Equals(lab.Name, label, StringComparison.OrdinalIgnoreCase))
+				if (Normalize(lab.Name) == needle)
 				{
 					target = a;
 					break;

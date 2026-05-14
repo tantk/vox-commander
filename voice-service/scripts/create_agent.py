@@ -45,74 +45,179 @@ Valid intent values for dispatch_command:
 Use exact string values. When in doubt, ask.
 """
 
-PARAMS_DISPATCH = {
-    "type": "object",
-    "properties": {
-        "intent": {
-            "type": "string",
-            "description": "Tactical intent — must be one of the documented values.",
-        },
-        "args": {
-            "type": "object",
-            "description": "Intent-specific arguments. See system prompt for shape.",
-        },
-    },
-    "required": ["intent"],
-}
+def _empty():
+    return {"type": "object", "properties": {}}
 
-PARAMS_READ_STATE = {
-    "type": "object",
-    "properties": {
-        "fields": {
-            "type": "array",
-            "description": "Subset of state fields to return. Omit to return all.",
-            "items": {
+
+def _tool(name: str, desc: str, params=None, required=None):
+    return {
+        "type": "client",
+        "name": name,
+        "description": desc,
+        "parameters": params or _empty(),
+        "expects_response": True,
+        "pre_tool_speech": "off",
+        "response_timeout_secs": 3,
+        **({"required": required} if required else {}),
+    }
+
+
+def _target_param():
+    return {
+        "type": "object",
+        "properties": {
+            "target": {
                 "type": "string",
-                "description": "A single state field name (e.g. cash, units, enemies).",
+                "description": "Where to send units. Accepts: Battleship grid cells "
+                "A1..F6 (e.g. 'B4'); map edges 'east_edge', 'west_edge', "
+                "'north_edge', 'south_edge', 'center'; semantic 'base', "
+                "'enemy_base', 'midpoint'; near-building 'near_storage', "
+                "'near_factory', 'near_radar', 'near_outpost', 'near_module'.",
             },
         },
-    },
-}
+        "required": ["target"],
+    }
 
-PARAMS_SET_PAUSE = {
-    "type": "object",
-    "properties": {
-        "paused": {
-            "type": "boolean",
-            "description": "True to pause the game, false to resume.",
-        },
-    },
-    "required": ["paused"],
-}
 
 TOOLS = [
-    {
-        "type": "client",
-        "name": "dispatch_command",
-        "description": "Issue a tactical command to the game engine.",
-        "parameters": PARAMS_DISPATCH,
-        "expects_response": True,
-        "pre_tool_speech": "off",
-        "response_timeout_secs": 3,
-    },
-    {
-        "type": "client",
-        "name": "read_state",
-        "description": "Read current game state — cash, unit counts, enemies visible.",
-        "parameters": PARAMS_READ_STATE,
-        "expects_response": True,
-        "pre_tool_speech": "off",
-        "response_timeout_secs": 3,
-    },
-    {
-        "type": "client",
-        "name": "set_pause",
-        "description": "Pause or resume the game.",
-        "parameters": PARAMS_SET_PAUSE,
-        "expects_response": True,
-        "pre_tool_speech": "off",
-        "response_timeout_secs": 3,
-    },
+    # Attack modes (no args)
+    _tool("assault",       "Full army attack-move toward the enemy base centroid. Selects army automatically."),
+    _tool("harass",        "Send 2-5 fast combat units to AttackMove the nearest visible enemy economy actor (miner / mining tower / storage / tanker)."),
+    _tool("scout",         "Send the single fastest combat unit Move (no engagement) toward the enemy base centroid."),
+    _tool("defend",        "Recall the full army back to our base centroid."),
+    _tool("hold_position", "Stop the selected units and set their stance to Defend so they fire on threats in range but don't chase."),
+
+    # Targeted attacks
+    _tool("focus_fire",
+        "Have all combat units in the current selection (or full army as fallback) concentrate fire on ONE named enemy actor.",
+        params={
+            "type": "object",
+            "properties": {
+                "target_label": {
+                    "type": "string",
+                    "description": "Friendly name of the enemy to focus, EXACTLY as labelled in-game with a hyphen — e.g. 'Tank-2', 'Bunker-1', 'Power-3', 'Rifle-4'. Never include spaces; always Prefix-Number.",
+                },
+            },
+            "required": ["target_label"],
+        }),
+    _tool("attack_kind",
+        "Attack the closest enemy of a given unit kind.",
+        params={
+            "type": "object",
+            "properties": {
+                "target_kind": {
+                    "type": "string",
+                    "description": "HV internal unit kind, e.g. 'rifleman', 'mbt', 'miner', 'storage', 'aatank'. Prefix with 'enemy_' to be explicit (default).",
+                },
+            },
+            "required": ["target_kind"],
+        }),
+
+    # Movement
+    _tool("station_army",
+        "Select the full army (combat units only) and AttackMove them to a target location. The most common 'send the army to X' call.",
+        params=_target_param()),
+    _tool("move_selection",
+        "Move the CURRENT selection to a target location (no auto-engagement). Use for relocating specific named units.",
+        params=_target_param()),
+    _tool("stop", "Stop the current selection's orders."),
+
+    # Selection
+    _tool("select_army", "Select all our combat-capable units. Call before any combat order that operates on selection."),
+    _tool("select",
+        "Select all our units of a given kind.",
+        params={
+            "type": "object",
+            "properties": {
+                "filter": {
+                    "type": "string",
+                    "description": "Unit kind to select: 'all_units' for everything, or a specific HV kind like 'mbt', 'rifleman', 'sniper', 'miner', 'builder'.",
+                },
+            },
+        }),
+
+    # Production
+    _tool("build",
+        "Queue combat units / vehicles / miners / builders in our factory or module.",
+        params={
+            "type": "object",
+            "properties": {
+                "unit": {
+                    "type": "string",
+                    "description": "HV unit internal name. Vehicles: 'mbt', 'aatank', 'apc', 'artillery', 'miner', 'builder'. Pods: 'rifleman', 'rocketeer', 'sniper', 'mortar', 'flamer', 'technician'.",
+                },
+                "count": {
+                    "type": "integer",
+                    "description": "How many to queue. Default 1.",
+                },
+            },
+            "required": ["unit"],
+        }),
+    _tool("produce_structure",
+        "Queue a building. Auto-places when production completes.",
+        params={
+            "type": "object",
+            "properties": {
+                "structure": {
+                    "type": "string",
+                    "description": "HV building internal name: 'generator', 'storage', 'module', 'factory', 'radar', 'techcenter', 'bunker', 'turret', 'aaturret'.",
+                },
+            },
+            "required": ["structure"],
+        }),
+    _tool("deploy", "Issue DeployTransform on the current selection — turns a Builder into an Outpost."),
+    _tool("auto_mine", "Send the currently selected miner(s) to the nearest unclaimed ore. Auto-fires on freshly-built miners — only call explicitly if a miner needs re-tasking."),
+    _tool("harvest", "Send the current selection to harvest ore."),
+    _tool("set_rally",
+        "Set the rally point on all our production buildings. New units stream to this location.",
+        params=_target_param()),
+
+    # Meta
+    _tool("read_state",
+        "Read the latest game-state snapshot (cash, unit counts, visible enemies).",
+        params={
+            "type": "object",
+            "properties": {
+                "fields": {
+                    "type": "array",
+                    "description": "Subset of state fields to return.",
+                    "items": {"type": "string", "description": "A field name e.g. 'cash', 'units', 'enemies'."},
+                },
+            },
+        }),
+    _tool("set_pause",
+        "Pause or resume the game. Omit 'paused' to toggle.",
+        params={
+            "type": "object",
+            "properties": {
+                "paused": {
+                    "type": "boolean",
+                    "description": "True to pause, false to resume. Omit to toggle current state.",
+                },
+            },
+        }),
+    _tool("toggle_grid",
+        "Show or hide the Battleship grid overlay (A1..F6). Omit 'visible' to toggle.",
+        params={
+            "type": "object",
+            "properties": {
+                "visible": {
+                    "type": "boolean",
+                    "description": "True to show, false to hide. Omit to toggle.",
+                },
+            },
+        }),
+    _tool("toggle_labels",
+        "Show or hide the friendly-name labels under units. Omit 'visible' to toggle.",
+        params={
+            "type": "object",
+            "properties": {
+                "visible": {
+                    "type": "boolean",
+                    "description": "True to show, false to hide. Omit to toggle.",
+                },
+            },
+        }),
 ]
 
 VOICE_ID_XO_ADAM = "pNInz6obpgDQGcFmaJgB"          # deep tactical male
