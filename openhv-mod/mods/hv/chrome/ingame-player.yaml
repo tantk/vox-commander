@@ -400,7 +400,7 @@ Container@PLAYER_WIDGETS:
 									ImageCollection: order-icons
 									ImageName: debug
 				Container@RADAR:
-					Logic: IngameRadarDisplayLogic
+					Logic: IngameRadarDisplayLogic, MinimapGridLabelsLogic
 					Children:
 						LogicTicker@RADAR_TICKER:
 						ColorBlock@RADAR_FADETOBLACK:
@@ -417,118 +417,6 @@ Container@PLAYER_WIDGETS:
 							SoundUp: RadarUp
 							SoundDown: RadarDown
 							Children:
-						# --- Vox Commander minimap grid labels ---
-						# Minimap is 222x222 at (14,40); 6 columns x 6 rows => 37 px / cell.
-						# Column letters across the TOP of the minimap.
-						Label@VOX_MM_COL_A:
-							X: 30
-							Y: 41
-							Width: 12
-							Height: 12
-							Text: A
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_COL_B:
-							X: 67
-							Y: 41
-							Width: 12
-							Height: 12
-							Text: B
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_COL_C:
-							X: 104
-							Y: 41
-							Width: 12
-							Height: 12
-							Text: C
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_COL_D:
-							X: 141
-							Y: 41
-							Width: 12
-							Height: 12
-							Text: D
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_COL_E:
-							X: 178
-							Y: 41
-							Width: 12
-							Height: 12
-							Text: E
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_COL_F:
-							X: 215
-							Y: 41
-							Width: 12
-							Height: 12
-							Text: F
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						# Row digits down the LEFT edge of the minimap.
-						Label@VOX_MM_ROW_1:
-							X: 15
-							Y: 56
-							Width: 12
-							Height: 12
-							Text: "1"
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_ROW_2:
-							X: 15
-							Y: 93
-							Width: 12
-							Height: 12
-							Text: "2"
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_ROW_3:
-							X: 15
-							Y: 130
-							Width: 12
-							Height: 12
-							Text: "3"
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_ROW_4:
-							X: 15
-							Y: 167
-							Width: 12
-							Height: 12
-							Text: "4"
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_ROW_5:
-							X: 15
-							Y: 204
-							Width: 12
-							Height: 12
-							Text: "5"
-							Align: Center
-							Font: TinyBold
-							Contrast: True
-						Label@VOX_MM_ROW_6:
-							X: 15
-							Y: 241
-							Width: 12
-							Height: 12
-							Text: "6"
-							Align: Center
-							Font: TinyBold
-							Contrast: True
 				Label@GAME_TIMER:
 					Logic: GameTimerLogic
 					X: 2
