@@ -40,6 +40,9 @@ namespace OpenRA.Mods.HV.Traits
 		[Desc("Ticks between state snapshots emitted to the client (default 50 = 2s at 25Hz).")]
 		public readonly int SnapshotInterval = 50;
 
+		[Desc("Emit enemy_intel events for the Intel voice channel.")]
+		public readonly bool IntelEnabled = false;
+
 		[Desc("Absolute or relative path to the voice-panel launcher script that spawns when a real match starts. " +
 			"Empty disables auto-spawn (use the panel manually).")]
 		public readonly string PanelLauncher = "C:/dev/elevenhack/cursor/vox-commander.bat";
@@ -254,7 +257,8 @@ namespace OpenRA.Mods.HV.Traits
 			{
 				EmitStateSnapshot();
 				EmitDerivedEvents();
-				EmitEnemyIntel();
+				if (info.IntelEnabled)
+					EmitEnemyIntel();
 			}
 		}
 
