@@ -14,6 +14,7 @@ from .commentator import Commentator, Intel
 from .game_socket import GameSocket
 from .protocol import Event
 from .refs import RefResolver
+from .session_log import start_session
 from .tools import Tools
 
 
@@ -56,9 +57,12 @@ def make_intel_speak() -> callable:
 
 
 async def amain() -> None:
-    load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", "..", "..", ".env"))
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+    load_dotenv(dotenv_path=os.path.join(project_root, ".env"))
+    start_session(__import__("pathlib").Path(project_root))
+
     host = os.environ.get("VOX_BRIDGE_HOST", "127.0.0.1")
-    port = int(os.environ.get("VOX_BRIDGE_PORT", "7777"))
+    port = int(os.environ.get("VOX_BRIDGE_PORT", "47777"))
 
     resolver = RefResolver()
     commentator = Commentator(make_commentator_speak())

@@ -24,3 +24,4 @@ obj/
 dist/
 build/
 voice-service/main.log
+voice-service/sessions/
