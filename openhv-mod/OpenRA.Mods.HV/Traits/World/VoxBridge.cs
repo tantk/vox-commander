@@ -66,6 +66,10 @@ namespace OpenRA.Mods.HV.Traits
 
 		int tickCount;
 		int prevFriendlyUnits = -1;
+		int prevEnemyBuildings = -1;
+		int prevFriendlyBuildings = -1;
+		bool victoryEmitted;
+		bool defeatEmitted;
 		bool startEmitted;
 		readonly HashSet<uint> autoMineHandled = new HashSet<uint>();
 		readonly Dictionary<uint, CPos> dispatchedMinerDestinations = new Dictionary<uint, CPos>();
@@ -1283,6 +1287,7 @@ namespace OpenRA.Mods.HV.Traits
 		{
 			if (world.LocalPlayer == null) return;
 			var p = world.LocalPlayer;
+
 			int friendly = world.Actors.Count(a =>
 				!a.IsDead && a.IsInWorld && a.Owner == p && a.TraitOrDefault<Mobile>() != null);
 			if (prevFriendlyUnits >= 0 && friendly < prevFriendlyUnits)
@@ -1291,6 +1296,30 @@ namespace OpenRA.Mods.HV.Traits
 				Emit($"{{\"type\":\"event\",\"kind\":\"units_lost\",\"ts\":{Game.LocalTick},\"count\":{lost}}}");
 			}
 			prevFriendlyUnits = friendly;
+
+			// Victory / defeat — flag the moment ownership of structures
+			// drops to zero on either side. One-shot so we don't spam.
+			int enemyBuildings = world.Actors.Count(a =>
+				!a.IsDead && a.IsInWorld && a.Owner != p && !a.Owner.NonCombatant &&
+				a.TraitOrDefault<Building>() != null);
+			int friendlyBuildings = world.Actors.Count(a =>
+				!a.IsDead && a.IsInWorld && a.Owner == p &&
+				a.TraitOrDefault<Building>() != null);
+
+			if (!victoryEmitted && prevEnemyBuildings > 0 && enemyBuildings == 0)
+			{
+				Emit($"{{\"type\":\"event\",\"kind\":\"victory\",\"ts\":{Game.LocalTick}}}");
+				victoryEmitted = true;
+				Log.Write("debug", "[VoxBridge] victory event emitted");
+			}
+			if (!defeatEmitted && prevFriendlyBuildings > 0 && friendlyBuildings == 0)
+			{
+				Emit($"{{\"type\":\"event\",\"kind\":\"defeat\",\"ts\":{Game.LocalTick}}}");
+				defeatEmitted = true;
+				Log.Write("debug", "[VoxBridge] defeat event emitted");
+			}
+			prevEnemyBuildings = enemyBuildings;
+			prevFriendlyBuildings = friendlyBuildings;
 		}
 
 		void SendAck(string id, bool ok, string error)
