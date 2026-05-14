@@ -6,8 +6,8 @@ import signal
 import threading
 
 from dotenv import load_dotenv
-from elevenlabs import play
 from elevenlabs.client import ElevenLabs
+from elevenlabs.play import play  # NOTE: `from elevenlabs import play` imports the module, not the fn
 
 from .agent_client import AgentClient
 from .commentator import Commentator, Intel
