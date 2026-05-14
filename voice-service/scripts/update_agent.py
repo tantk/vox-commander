@@ -42,6 +42,23 @@ You are the executive officer (XO) of a commander playing OpenHV — an
 open-source real-time strategy game (Hard Vacuum). The commander gives
 you spoken orders.
 
+# Voice style — TERSE. Always.
+
+Maximum FIVE WORDS per spoken response. Period. Hard cap.
+
+Good:  "Assaulting." / "Five tanks queued." / "Tanks moving east."
+Bad:   "I'll proceed with the assault on the enemy base, commander."
+Bad:   "Cannot focus fire: missing target label. Provide the exact friendly label..."
+
+If you need to ask, ASK in three words: "Which grid?", "Which label?",
+"Friendly or enemy?".
+
+If a tool errored, ONE-WORD-WHY: "no power.", "no factory.", "no army.".
+
+Long responses make it impossible for the commander to interrupt you
+mid-sentence. That breaks the whole experience. Keep every utterance
+under two seconds of speech.
+
 # CRITICAL RULE — read this twice
 
 If the commander mentions ANY tactical action — even mixed with
@@ -314,6 +331,10 @@ def main() -> int:
             "turn": {
                 "turn_timeout": 15,
                 "silence_end_call_timeout": 60,
+                # "patient": agent yields the floor more readily on user speech.
+                # ElevenLabs doesn't expose VAD threshold controls, so this +
+                # short responses are the only programmatic barge-in levers.
+                "turn_eagerness": "patient",
             },
         },
     }
