@@ -10,8 +10,8 @@ import os
 
 from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.conversation import ClientTools, Conversation
-from elevenlabs.conversational_ai.default_audio_interface import DefaultAudioInterface
 
+from .audio import HardStopAudioInterface
 from .tools import Tools
 
 
@@ -66,7 +66,7 @@ class AgentClient:
             client,
             agent_id,
             requires_auth=True,
-            audio_interface=DefaultAudioInterface(),
+            audio_interface=HardStopAudioInterface(),
             client_tools=client_tools,
             callback_user_transcript=lambda t: print(f"[user] {t}"),
             callback_agent_response=lambda t: print(f"[xo]   {t}"),
