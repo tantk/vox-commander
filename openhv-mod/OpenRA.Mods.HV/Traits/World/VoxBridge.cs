@@ -1012,20 +1012,21 @@ namespace OpenRA.Mods.HV.Traits
 			var p = world.LocalPlayer;
 			if (p == null) return (false, "no_local_player");
 
-			var selected = world.Selection.Actors
-				.Where(a => !a.IsDead && a.Owner == p)
-				.ToList();
-			if (selected.Count == 0) return (false, "no_selection");
+			// Apply to every combat unit, not just whatever the player happens
+			// to have selected — commander voice intent is "the whole army
+			// holds here", and counting on a prior select_army is fragile.
+			var units = ArmyUnits(p);
+			if (units.Count == 0) return (false, "no_army");
 
 			// Stop the current order AND lock the unit into Defend stance so it
 			// fires on threats in range but won't chase them out of position.
-			foreach (var a in selected)
+			foreach (var a in units)
 			{
 				world.IssueOrder(new Order("Stop", a, false));
 				if (a.TraitOrDefault<AutoTarget>() != null)
 					world.IssueOrder(new Order("SetUnitStance", a, false) { ExtraData = (uint)UnitStance.Defend });
 			}
-			Log.Write("debug", $"[VoxBridge] hold_position: {selected.Count} units stopped + Defend stance");
+			Log.Write("debug", $"[VoxBridge] hold_position: {units.Count} army units stopped + Defend stance");
 			return (true, null);
 		}
 

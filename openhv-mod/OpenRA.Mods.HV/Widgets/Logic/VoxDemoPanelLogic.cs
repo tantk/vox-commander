@@ -68,7 +68,7 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 					l.Issue("build", "{\"unit\":\"rocketeer\",\"count\":5}");
 				} },
 				[3]  = new Beat { Slug = "03_pan_to_enemy",   Send = l => l.Issue("pan_camera", "{\"target\":\"enemy_base\"}") },
-				[4]  = new Beat { Slug = "04_airstrike",      Send = l => l.Issue("airstrike", "{\"target\":\"E5\"}") },
+				[4]  = new Beat { Slug = "04_airstrike",      Send = l => l.Issue("airstrike", "{\"target\":\"enemy_base\"}") },
 				[5]  = new Beat { Slug = "05_hold_position",  Send = l => l.Issue("station_army", "{\"target\":\"C3\",\"aggressive\":false}") },
 				[6]  = new Beat { Slug = "06_focus_fire",     Send = l => l.Issue("focus_fire", "{\"target_label\":\"Bunker-1\"}") },
 				[7]  = new Beat { Slug = "07_full_assault",   Send = l => l.Issue("assault", "{}") },

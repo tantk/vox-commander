@@ -103,7 +103,7 @@ Container@INGAME_ROOT:
 							Y: 120
 							Width: 214
 							Height: 26
-							Text: 4. Airstrike E5
+							Text: 4. Airstrike Enemy
 							Font: Bold
 						Button@VOX_DEMO_BTN_05:
 							X: 8
@@ -175,14 +175,6 @@ Container@INGAME_ROOT:
 							Height: 26
 							Text: 14. Pause Game
 							Font: Bold
-						Label@VOX_DEMO_HELP:
-							X: 8
-							Y: 460
-							Width: 214
-							Height: 70
-							Text: Each button plays the matching commander voice line and fires the equivalent game command. Click in sequence to drive a hands-off demo.
-							Font: Tiny
-							Align: Left
 				Container@VOX_PANEL:
 					Logic: VoxPanelLogic
 					X: 4
