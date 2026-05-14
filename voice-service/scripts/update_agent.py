@@ -349,6 +349,9 @@ def main() -> int:
                     "prompt": SYSTEM_PROMPT,
                     "llm": "gpt-5-mini",
                     "temperature": 0.2,
+                    # Force reasoning into a separate channel that doesn't
+                    # leak into TTS. Per ElevenLabs docs.
+                    "reasoning_effort": "low",
                 },
             },
             "turn": {

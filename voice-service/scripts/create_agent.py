@@ -257,6 +257,11 @@ BODY = {
                 "prompt": SYSTEM_PROMPT,
                 # 0.2: prevents hallucinated past-tense tool calls.
                 "temperature": 0.2,
+                # CRITICAL for voice: keep reasoning out of the spoken
+                # output channel. Per ElevenLabs docs, "none" is
+                # recommended for conversational voice agents so the
+                # model doesn't think out loud (which leaks into TTS).
+                "reasoning_effort": "low",
                 "tools": TOOLS,
             },
         },
