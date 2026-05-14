@@ -2,6 +2,13 @@
 	TerrainLighting:
 		Intensity: 0.95
 
+# Boost starting cash for every player on this map so both the user and
+# the Rogue AI can sustain constant production from the get-go.
+Player:
+	PlayerResources:
+		DefaultCash: 20000
+		SelectableCash: 20000
+
 RESOURCE_LIGHT:
 	Inherits: LIGHT
 	TerrainLightSource:

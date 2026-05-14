@@ -107,6 +107,27 @@ Actors:
 		Owner: Multi0
 		Facing: 512
 		Location: 30,25
+	M0Builder1: builder
+		Owner: Multi0
+		Location: 21,23
+	M0Builder2: builder
+		Owner: Multi0
+		Location: 23,23
+	M0Builder3: builder
+		Owner: Multi0
+		Location: 25,23
+	M0Miner1: miner
+		Owner: Multi0
+		Location: 19,27
+	M0Miner2: miner
+		Owner: Multi0
+		Location: 21,27
+	M0Miner3: miner
+		Owner: Multi0
+		Location: 23,27
+	M0Miner4: miner
+		Owner: Multi0
+		Location: 25,27
 
 	# --- Multi1 pre-placed base + army (south) ---
 	M1Outpost: outpost
@@ -160,6 +181,27 @@ Actors:
 		Owner: Creeps
 		Facing: 0
 		Location: 30,46
+	M1Builder1: builder
+		Owner: Creeps
+		Location: 21,48
+	M1Builder2: builder
+		Owner: Creeps
+		Location: 23,48
+	M1Builder3: builder
+		Owner: Creeps
+		Location: 25,48
+	M1Miner1: miner
+		Owner: Creeps
+		Location: 19,44
+	M1Miner2: miner
+		Owner: Creeps
+		Location: 21,44
+	M1Miner3: miner
+		Owner: Creeps
+		Location: 23,44
+	M1Miner4: miner
+		Owner: Creeps
+		Location: 25,44
 
 	# --- Neutral terrain decoration (carried over from business-as-usual) ---
 	Light0: lamppost
