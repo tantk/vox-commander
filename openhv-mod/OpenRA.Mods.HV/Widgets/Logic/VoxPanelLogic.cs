@@ -10,6 +10,9 @@
 #endregion
 
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Text.RegularExpressions;
 using OpenRA.Mods.Common.Widgets;
 using OpenRA.Mods.HV.Traits;
 using OpenRA.Widgets;
@@ -23,7 +26,16 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 	/// </summary>
 	public class VoxPanelLogic : ChromeLogic
 	{
+		// Project root that holds vox-commander.bat and .env. Hardcoded for the
+		// hackathon demo — fine because the trait already hardcodes the same
+		// path for its auto-spawn.
+		const string ProjectRoot = @"C:\dev\elevenhack\cursor";
+
 		readonly VoxBridge bridge;
+		Process voiceProc;
+		ButtonWidget toggleBtn;
+		LabelWidget statusLbl;
+		TextFieldWidget keyField;
 		uint cmdSeq;
 
 		[ObjectCreator.UseCtor]
@@ -70,6 +82,97 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 			Wire(widget, "VOX_BTN_HOLD_POSITION", () => Issue("hold_position", "{}"));
 			Wire(widget, "VOX_BTN_RALLY_B4",      () => Issue("set_rally", "{\"target\":\"B4\"}"));
 			Wire(widget, "VOX_BTN_RALLY_MIDPOINT",() => Issue("set_rally", "{\"target\":\"midpoint\"}"));
+
+			// ----- voice service controls (API key + activate toggle) -----
+			keyField = widget.GetOrNull<TextFieldWidget>("VOX_FIELD_APIKEY");
+			toggleBtn = widget.GetOrNull<ButtonWidget>("VOX_BTN_VOICE_TOGGLE");
+			statusLbl = widget.GetOrNull<LabelWidget>("VOX_LBL_VOICE_STATUS");
+
+			var saveBtn = widget.GetOrNull<ButtonWidget>("VOX_BTN_SAVE_KEY");
+			if (saveBtn != null)
+				saveBtn.OnClick = OnSaveKey;
+
+			if (toggleBtn != null)
+				toggleBtn.OnClick = OnToggleVoice;
+
+			SetStatus("Voice service idle");
+		}
+
+		void OnSaveKey()
+		{
+			if (keyField == null) return;
+			var key = (keyField.Text ?? "").Trim();
+			if (string.IsNullOrEmpty(key))
+			{
+				SetStatus("Enter a key first");
+				return;
+			}
+
+			var envPath = Path.Combine(ProjectRoot, ".env");
+			var text = File.Exists(envPath) ? File.ReadAllText(envPath) : "";
+			const string keyName = "ELEVENLABS_API_KEY";
+			if (Regex.IsMatch(text, $"(?m)^{keyName}=.*$"))
+				text = Regex.Replace(text, $"(?m)^{keyName}=.*$", $"{keyName}={key}");
+			else
+				text += (text.EndsWith("\n") || text.Length == 0 ? "" : "\n") + $"{keyName}={key}\n";
+
+			try
+			{
+				File.WriteAllText(envPath, text);
+				keyField.Text = "";
+				SetStatus("API key saved");
+			}
+			catch (Exception ex)
+			{
+				SetStatus($"Save failed: {ex.Message}");
+			}
+		}
+
+		void OnToggleVoice()
+		{
+			if (voiceProc != null && !voiceProc.HasExited)
+			{
+				try { voiceProc.Kill(); } catch { }
+				voiceProc = null;
+				if (toggleBtn != null) toggleBtn.Text = "ACTIVATE VOICE";
+				SetStatus("Voice service stopped");
+				return;
+			}
+
+			var python = Path.Combine(ProjectRoot, "voice-service", ".venv", "Scripts", "python.exe");
+			var workdir = Path.Combine(ProjectRoot, "voice-service");
+			if (!File.Exists(python))
+			{
+				SetStatus($"Python venv not found: {python}");
+				return;
+			}
+
+			try
+			{
+				var psi = new ProcessStartInfo
+				{
+					FileName = python,
+					Arguments = "-u -m vox.main",
+					UseShellExecute = true,
+					CreateNoWindow = false,
+					WorkingDirectory = workdir,
+				};
+				// Keep the console visible so the operator can see transcripts / errors
+				// during the demo. Hide it later by setting CreateNoWindow + UseShellExecute=false.
+				voiceProc = Process.Start(psi);
+				if (toggleBtn != null) toggleBtn.Text = "DEACTIVATE VOICE";
+				SetStatus("Voice live — speak to the XO");
+			}
+			catch (Exception ex)
+			{
+				SetStatus($"Spawn failed: {ex.Message}");
+			}
+		}
+
+		void SetStatus(string text)
+		{
+			if (statusLbl != null)
+				statusLbl.Text = text;
 		}
 
 		static void Wire(Widget parent, string id, Action onClick)

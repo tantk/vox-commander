@@ -66,7 +66,7 @@ Container@INGAME_ROOT:
 					X: 4
 					Y: 80
 					Width: 220
-					Height: 480
+					Height: 600
 					Children:
 						Label@VOX_TITLE:
 							X: 0
@@ -202,6 +202,51 @@ Container@INGAME_ROOT:
 							Height: 28
 							Text: Rally Mid
 							Font: Bold
+						# ----- voice service control -----
+						Label@VOX_LBL_VOICE_HEADER:
+							X: 10
+							Y: 466
+							Width: 200
+							Height: 14
+							Text: VOICE SERVICE
+							Font: TinyBold
+							Align: Left
+						Label@VOX_LBL_APIKEY:
+							X: 10
+							Y: 484
+							Width: 200
+							Height: 14
+							Text: New API key (optional)
+							Font: Tiny
+							Align: Left
+						TextField@VOX_FIELD_APIKEY:
+							X: 10
+							Y: 500
+							Width: 130
+							Height: 24
+							Font: Bold
+						Button@VOX_BTN_SAVE_KEY:
+							X: 145
+							Y: 500
+							Width: 65
+							Height: 24
+							Text: Save Key
+							Font: Bold
+						Button@VOX_BTN_VOICE_TOGGLE:
+							X: 10
+							Y: 532
+							Width: 200
+							Height: 40
+							Text: ACTIVATE VOICE
+							Font: Bold
+						Label@VOX_LBL_VOICE_STATUS:
+							X: 10
+							Y: 576
+							Width: 200
+							Height: 14
+							Text: Voice service idle
+							Font: Tiny
+							Align: Center
 		Container@MENU_ROOT:
 		TooltipContainer@TOOLTIP_CONTAINER:
 		MouseAttachment@MOUSE_ATTATCHMENT:

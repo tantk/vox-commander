@@ -43,9 +43,10 @@ namespace OpenRA.Mods.HV.Traits
 		[Desc("Emit enemy_intel events for the Intel voice channel.")]
 		public readonly bool IntelEnabled = false;
 
-		[Desc("Absolute or relative path to the voice-panel launcher script that spawns when a real match starts. " +
-			"Empty disables auto-spawn (use the panel manually).")]
-		public readonly string PanelLauncher = "C:/dev/elevenhack/cursor/vox-commander.bat";
+		[Desc("Absolute path to the voice-panel launcher script that spawns when a real match starts. " +
+			"Default empty — auto-spawn is OFF because the in-game VOX_PANEL has its own Activate Voice button. " +
+			"Set this to vox-commander.bat to reinstate the legacy tkinter panel auto-spawn.")]
+		public readonly string PanelLauncher = "";
 
 		public override object Create(ActorInitializer init) { return new VoxBridge(this); }
 	}
