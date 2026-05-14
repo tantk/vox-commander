@@ -129,18 +129,32 @@ namespace OpenRA.Mods.HV.Traits
 			var stepX = b.Width / mgr.Columns;
 			var stepY = b.Height / mgr.Rows;
 
-			// Column letters across the top of the playable area.
+			// Compute the world-space top-left of what's currently on screen.
+			// Pinning labels here makes them act like a spreadsheet's frozen
+			// header row/column — always visible at the edges of the camera
+			// view regardless of where the player scrolled.
+			var viewTL = wr.ProjectedPosition(wr.Viewport.TopLeft);
+
+			// Small inset so the labels sit just INSIDE the visible area
+			// rather than getting clipped at the very edge.
+			const int InsetWp = 512;
+
+			// Column letters across the top of the viewport.
 			for (var c = 0; c < mgr.Columns; c++)
 			{
-				var cell = new CPos(b.Left + c * stepX + stepX / 2, b.Top);
-				yield return new TextAnnotationRenderable(font, map.CenterOfCell(cell), 0, info.Color, ((char)('A' + c)).ToString());
+				var labelCell = new CPos(b.Left + c * stepX + stepX / 2, 0);
+				var center = map.CenterOfCell(labelCell);
+				var pinned = new WPos(center.X, viewTL.Y + InsetWp, 0);
+				yield return new TextAnnotationRenderable(font, pinned, 0, info.Color, ((char)('A' + c)).ToString());
 			}
 
-			// Row digits down the left edge of the playable area.
+			// Row digits down the left edge of the viewport.
 			for (var r = 0; r < mgr.Rows; r++)
 			{
-				var cell = new CPos(b.Left, b.Top + r * stepY + stepY / 2);
-				yield return new TextAnnotationRenderable(font, map.CenterOfCell(cell), 0, info.Color, (r + 1).ToString());
+				var labelCell = new CPos(0, b.Top + r * stepY + stepY / 2);
+				var center = map.CenterOfCell(labelCell);
+				var pinned = new WPos(viewTL.X + InsetWp, center.Y, 0);
+				yield return new TextAnnotationRenderable(font, pinned, 0, info.Color, (r + 1).ToString());
 			}
 
 			// Optionally: faint per-cell labels at each square's center.
