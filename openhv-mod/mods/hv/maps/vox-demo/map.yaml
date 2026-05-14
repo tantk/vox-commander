@@ -29,14 +29,21 @@ Players:
 	PlayerReference@Creeps:
 		Name: Creeps
 		NonCombatant: False
-		Faction: Random
+		# Yuruki: matches the BASE prereq (base.yi) so the AI can rebuild,
+		# and pairs with module2 below to unlock the full unit roster.
+		Faction: yi
+		LockFaction: True
 		Color: FF3030
 		Bot: rogue
 		Enemies: Multi0
 	PlayerReference@Multi0:
 		Name: Multi0
 		Playable: True
-		Faction: Random
+		# Locking to Yuruki guarantees the BASE building (prereq base.yi)
+		# and the Yuruki-only sniper/jetpacker work. Pairing module2 below
+		# also unlocks the Synapol-faction units (rocketeer, mortar, etc.).
+		Faction: yi
+		LockFaction: True
 		Enemies: Creeps
 	# Multi1 stays as a lobby slot for human-vs-human matches but is no
 	# longer the owner of pre-placed south actors.
@@ -71,6 +78,12 @@ Actors:
 	M0Module: module
 		Owner: Multi0
 		Location: 30,21
+	# Synapol-variant module provides module.sc prereq so the player can
+	# train rocketeers / mortars / flamers from frame one regardless of
+	# the locked Yuruki faction.
+	M0Module2: module2
+		Owner: Multi0
+		Location: 30,14
 	M0Generator1: generator
 		Owner: Multi0
 		Location: 15,18
@@ -167,6 +180,9 @@ Actors:
 	M1Module: module
 		Owner: Creeps
 		Location: 30,50
+	M1Module2: module2
+		Owner: Creeps
+		Location: 30,57
 	M1Generator1: generator
 		Owner: Creeps
 		Location: 15,53
