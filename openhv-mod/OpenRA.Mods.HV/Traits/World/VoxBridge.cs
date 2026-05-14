@@ -1042,20 +1042,24 @@ namespace OpenRA.Mods.HV.Traits
 			if (cell == null) return (false, "unknown_target");
 
 			// HV's airstrike is the AirstrikePower trait on the Radar Dome.
-			// Order name is FlushBombers; subject is the player actor; target
-			// is the cell to strike. We just issue the order — if the power
-			// isn't charged yet, the engine no-ops it (and the radar's voice
-			// notifications tell the player to wait).
+			// We deliberately bypass SupportPowerManager.Activate here — its
+			// !Ready guard would silently no-op the demo button for the
+			// first ~150 seconds of every match (ChargeInterval: 3750), and
+			// shortening the charge globally also speeds up the AI's radar.
+			// Calling SendAirstrike directly on the player's radar dome lets
+			// the commander fire on demand while leaving the AI's
+			// AirstrikePower charge cadence untouched.
 			var radar = world.Actors.FirstOrDefault(a =>
 				!a.IsDead && a.IsInWorld && a.Owner == p &&
 				a.Info.Name.Equals("radar", StringComparison.OrdinalIgnoreCase));
 			if (radar == null) return (false, "no_radar");
 
-			world.IssueOrder(new Order("FlushBombers", p.PlayerActor, Target.FromCell(world, cell.Value), false)
-			{
-				SuppressVisualFeedback = true,
-			});
-			Log.Write("debug", $"[VoxBridge] airstrike -> {target} ({cell.Value})");
+			var power = radar.TraitOrDefault<AirstrikePower>();
+			if (power == null) return (false, "no_airstrike_power");
+
+			var targetPos = world.Map.CenterOfCell(cell.Value);
+			power.SendAirstrike(radar, targetPos);
+			Log.Write("debug", $"[VoxBridge] airstrike -> {target} ({cell.Value}) [direct]");
 			return (true, null);
 		}
 

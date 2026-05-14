@@ -9,16 +9,6 @@ Player:
 		DefaultCash: 20000
 		SelectableCash: 20000
 
-# Demo-mode airstrike: stock RADAR ships with ChargeInterval 3750 (~150s
-# at 25 ticks/sec), which means the airstrike beat silently no-ops if the
-# user presses it within the first 2.5 minutes — SupportPowerManager.Activate
-# bails when !Ready. We shrink it to 1 second so the demo button reliably
-# triggers bombers from frame zero, and the recharge cadence stays tight
-# enough that beat 10 (final assault) can chain a second airstrike if needed.
-RADAR:
-	AirstrikePower:
-		ChargeInterval: 25
-
 RESOURCE_LIGHT:
 	Inherits: LIGHT
 	TerrainLightSource:
