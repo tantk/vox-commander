@@ -563,8 +563,11 @@ namespace OpenRA.Mods.HV.Traits
 
 		CPos? FindPlacementCell(ActorInfo ai, BuildingInfo bi, CPos origin)
 		{
-			// Simple spiral search outward. Range ~ 12 cells which is generous for most buildings.
-			for (var radius = 1; radius <= 12; radius++)
+			// Spiral search outward. Bumped to 24 cells (was 12) so a cramped
+			// starting cluster doesn't leave queued buildings stuck waiting
+			// for placement — the yellow-striped "ready" preview was the
+			// player's first sign that 12 wasn't enough.
+			for (var radius = 1; radius <= 24; radius++)
 			{
 				for (var dx = -radius; dx <= radius; dx++)
 				{

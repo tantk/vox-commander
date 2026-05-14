@@ -56,6 +56,9 @@ Actors:
 		Location: 24,52
 
 	# --- Multi0 pre-placed base + army (north) ---
+	M0MainBase: base
+		Owner: Multi0
+		Location: 24,15
 	M0Outpost: outpost
 		Owner: Multi0
 		Location: 21,21
@@ -149,6 +152,9 @@ Actors:
 		Location: 26,30
 
 	# --- Multi1 pre-placed base + army (south) ---
+	M1MainBase: base
+		Owner: Creeps
+		Location: 24,56
 	M1Outpost: outpost
 		Owner: Creeps
 		Location: 21,50
