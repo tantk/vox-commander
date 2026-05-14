@@ -22,14 +22,16 @@ Players:
 		OwnsWorld: True
 		NonCombatant: True
 		Faction: Random
-	# Creeps is the static-but-attackable enemy. Always instantiated by the
-	# engine at world load (no lobby required), so the south base is real
-	# even when Launch.Map skips lobby setup.
+	# Creeps owns the south base. Marked Bot: rogue so the Rogue AI runs
+	# on it from world load without needing the lobby's slot_bot path
+	# (Player.cs:190+202 — for map-player slots, BotType is read from
+	# PlayerReference.Bot at world construction).
 	PlayerReference@Creeps:
 		Name: Creeps
 		NonCombatant: False
 		Faction: Random
 		Color: FF3030
+		Bot: rogue
 		Enemies: Multi0
 	PlayerReference@Multi0:
 		Name: Multi0
