@@ -83,6 +83,7 @@ Actors:
 	M0Radar: radar
 		Owner: Multi0
 		Location: 33,21
+	# Multi0 vehicles (row 25): 2 mbt, 1 aatank, 1 artillery, 1 apc
 	M0Tank1: mbt
 		Owner: Multi0
 		Facing: 512
@@ -91,22 +92,40 @@ Actors:
 		Owner: Multi0
 		Facing: 512
 		Location: 22,25
-	M0Tank3: mbt
+	M0AA1: aatank
 		Owner: Multi0
 		Facing: 512
 		Location: 24,25
-	M0Rifle1: rifleman
+	M0Arty1: artillery
 		Owner: Multi0
 		Facing: 512
 		Location: 26,25
-	M0Rifle2: rifleman
+	M0APC1: apc
 		Owner: Multi0
 		Facing: 512
 		Location: 28,25
-	M0Rifle3: rifleman
+	# Multi0 infantry (row 27): 2 rifleman, 1 rocketeer, 1 sniper, 1 technician
+	M0Rifle1: rifleman
 		Owner: Multi0
 		Facing: 512
-		Location: 30,25
+		Location: 20,27
+	M0Rifle2: rifleman
+		Owner: Multi0
+		Facing: 512
+		Location: 22,27
+	M0Rocket1: rocketeer
+		Owner: Multi0
+		Facing: 512
+		Location: 24,27
+	M0Sniper1: sniper
+		Owner: Multi0
+		Facing: 512
+		Location: 26,27
+	M0Tech1: technician
+		Owner: Multi0
+		Facing: 512
+		Location: 28,27
+	# Multi0 builders + miners
 	M0Builder1: builder
 		Owner: Multi0
 		Location: 21,23
@@ -118,16 +137,16 @@ Actors:
 		Location: 25,23
 	M0Miner1: miner
 		Owner: Multi0
-		Location: 19,27
+		Location: 20,30
 	M0Miner2: miner
 		Owner: Multi0
-		Location: 21,27
+		Location: 22,30
 	M0Miner3: miner
 		Owner: Multi0
-		Location: 23,27
+		Location: 24,30
 	M0Miner4: miner
 		Owner: Multi0
-		Location: 25,27
+		Location: 26,30
 
 	# --- Multi1 pre-placed base + army (south) ---
 	M1Outpost: outpost
@@ -157,6 +176,7 @@ Actors:
 	M1Radar: radar
 		Owner: Creeps
 		Location: 33,50
+	# Creeps vehicles (row 46): 2 mbt, 1 aatank, 1 artillery, 1 apc
 	M1Tank1: mbt
 		Owner: Creeps
 		Facing: 0
@@ -165,22 +185,40 @@ Actors:
 		Owner: Creeps
 		Facing: 0
 		Location: 22,46
-	M1Tank3: mbt
+	M1AA1: aatank
 		Owner: Creeps
 		Facing: 0
 		Location: 24,46
-	M1Rifle1: rifleman
+	M1Arty1: artillery
 		Owner: Creeps
 		Facing: 0
 		Location: 26,46
-	M1Rifle2: rifleman
+	M1APC1: apc
 		Owner: Creeps
 		Facing: 0
 		Location: 28,46
-	M1Rifle3: rifleman
+	# Creeps infantry (row 44): 2 rifleman, 1 rocketeer, 1 sniper, 1 technician
+	M1Rifle1: rifleman
 		Owner: Creeps
 		Facing: 0
-		Location: 30,46
+		Location: 20,44
+	M1Rifle2: rifleman
+		Owner: Creeps
+		Facing: 0
+		Location: 22,44
+	M1Rocket1: rocketeer
+		Owner: Creeps
+		Facing: 0
+		Location: 24,44
+	M1Sniper1: sniper
+		Owner: Creeps
+		Facing: 0
+		Location: 26,44
+	M1Tech1: technician
+		Owner: Creeps
+		Facing: 0
+		Location: 28,44
+	# Creeps builders + miners
 	M1Builder1: builder
 		Owner: Creeps
 		Location: 21,48
@@ -192,16 +230,16 @@ Actors:
 		Location: 25,48
 	M1Miner1: miner
 		Owner: Creeps
-		Location: 19,44
+		Location: 20,41
 	M1Miner2: miner
 		Owner: Creeps
-		Location: 21,44
+		Location: 22,41
 	M1Miner3: miner
 		Owner: Creeps
-		Location: 23,44
+		Location: 24,41
 	M1Miner4: miner
 		Owner: Creeps
-		Location: 25,44
+		Location: 26,41
 
 	# --- Neutral terrain decoration (carried over from business-as-usual) ---
 	Light0: lamppost
