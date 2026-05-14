@@ -27,3 +27,4 @@ voice-service/main.log
 voice-service/sessions/
 voice-service/commander_audio/
 voice-service/xo_audio/
+voice-service/intro_audio/
