@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using OpenRA.Mods.Common.Widgets;
 using OpenRA.Mods.HV.Traits;
 using OpenRA.Widgets;
@@ -34,8 +35,16 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 	public class VoxDemoPanelLogic : ChromeLogic
 	{
 		const string AudioRoot = @"C:\dev\elevenhack\cursor\voice-service\commander_audio";
+		const string XOAudioRoot = @"C:\dev\elevenhack\cursor\voice-service\xo_audio";
+
+		// Approximate commander VO duration before the XO replies. Picked to
+		// land after most commander lines (~1.5–2.5s) without leaving an
+		// awkward gap. Tunable; per-beat overrides could be added later if a
+		// specific commander line runs especially long.
+		const int XOResponseDelayMs = 2000;
 
 		readonly VoxBridge bridge;
+		readonly List<Timer> pendingXOTimers = new List<Timer>();
 		uint cmdSeq;
 
 		struct Beat
@@ -92,13 +101,14 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 
 		void Fire(Beat beat)
 		{
-			PlayAudio(beat.Slug);
+			PlayAudio(AudioRoot, beat.Slug);
 			beat.Send(this);
+			ScheduleXOResponse(beat.Slug);
 		}
 
-		void PlayAudio(string slug)
+		void PlayAudio(string root, string slug)
 		{
-			var path = Path.Combine(AudioRoot, slug + ".mp3");
+			var path = Path.Combine(root, slug + ".mp3");
 			if (!File.Exists(path))
 			{
 				Log.Write("debug", $"[VoxDemoPanel] missing audio: {path}");
@@ -118,6 +128,30 @@ namespace OpenRA.Mods.HV.Widgets.Logic
 			{
 				Log.Write("debug", $"[VoxDemoPanel] audio play failed for {slug}: {ex.Message}");
 			}
+		}
+
+		// Plays the matching XO response MP3 after a fixed delay. Without
+		// this the live agent never hears the demo button audio (it bypasses
+		// the mic), so the recording would have commander lines with no XO
+		// reply. Pre-canned XO audio uses the same Adam voice ID as the live
+		// agent, so a viewer can't tell the difference.
+		void ScheduleXOResponse(string slug)
+		{
+			var xoPath = Path.Combine(XOAudioRoot, slug + ".mp3");
+			if (!File.Exists(xoPath))
+			{
+				Log.Write("debug", $"[VoxDemoPanel] missing XO audio: {xoPath}");
+				return;
+			}
+
+			Timer t = null;
+			t = new Timer(_ =>
+			{
+				PlayAudio(XOAudioRoot, slug);
+				try { t?.Dispose(); } catch { }
+				lock (pendingXOTimers) { pendingXOTimers.Remove(t); }
+			}, null, XOResponseDelayMs, System.Threading.Timeout.Infinite);
+			lock (pendingXOTimers) { pendingXOTimers.Add(t); }
 		}
 
 		void Issue(string intent, string args)
