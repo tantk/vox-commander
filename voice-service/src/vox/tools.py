@@ -161,3 +161,9 @@ class Tools:
         visible = params.get("visible")
         args = {} if visible is None else {"visible": bool(visible)}
         return await self._send("toggle_labels", args)
+
+    async def pan_camera(self, params: dict) -> str:
+        target = (params.get("target") or "").strip()
+        if not target:
+            return json.dumps({"ok": False, "error": "missing_target"})
+        return await self._send("pan_camera", {"target": target})

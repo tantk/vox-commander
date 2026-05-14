@@ -62,6 +62,7 @@ namespace OpenRA.Mods.HV.Traits
 		StreamWriter activeWriter;
 		CancellationTokenSource cts;
 		World world;
+		WorldRenderer worldRenderer;
 
 		int tickCount;
 		int prevFriendlyUnits = -1;
@@ -84,6 +85,7 @@ namespace OpenRA.Mods.HV.Traits
 		public void WorldLoaded(World w, WorldRenderer wr)
 		{
 			world = w;
+			worldRenderer = wr;
 
 			// Don't bind during shell map (the main-menu background scene) or map editor.
 			if (w.Type != WorldType.Regular)
@@ -376,6 +378,7 @@ namespace OpenRA.Mods.HV.Traits
 				case "hold_position":     return HandleHoldPosition();
 				case "toggle_grid":       return HandleToggleGrid(cmd.Args);
 				case "toggle_labels":     return HandleToggleLabels(cmd.Args);
+				case "pan_camera":        return HandlePanCamera(cmd.Args);
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
 				default:                  return (false, "unknown_intent");
@@ -1015,6 +1018,21 @@ namespace OpenRA.Mods.HV.Traits
 					world.IssueOrder(new Order("SetUnitStance", a, false) { ExtraData = (uint)UnitStance.Defend });
 			}
 			Log.Write("debug", $"[VoxBridge] hold_position: {selected.Count} units stopped + Defend stance");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandlePanCamera(JsonElement args)
+		{
+			if (worldRenderer == null) return (false, "no_world_renderer");
+
+			var target = args.TryGetProperty("target", out var t) ? t.GetString() : null;
+			if (string.IsNullOrEmpty(target)) return (false, "missing_target");
+
+			var cell = ResolveLogicalCell(target);
+			if (cell == null) return (false, "unknown_target");
+
+			worldRenderer.Viewport.Center(world.Map.CenterOfCell(cell.Value));
+			Log.Write("debug", $"[VoxBridge] pan_camera -> {target} ({cell.Value})");
 			return (true, null);
 		}
 

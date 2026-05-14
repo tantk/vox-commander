@@ -218,6 +218,9 @@ TOOLS = [
                 },
             },
         }),
+    _tool("pan_camera",
+        "Move the camera viewport so a target location is on screen. Use whenever the commander says 'look at', 'show me', 'pan to', 'go to', or asks about somewhere off-screen on a large map — fundamental to keyboard-and-mouse-free play.",
+        params=_target_param()),
 ]
 
 VOICE_ID_XO_ADAM = "pNInz6obpgDQGcFmaJgB"          # deep tactical male
