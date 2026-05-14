@@ -167,3 +167,9 @@ class Tools:
         if not target:
             return json.dumps({"ok": False, "error": "missing_target"})
         return await self._send("pan_camera", {"target": target})
+
+    async def airstrike(self, params: dict) -> str:
+        target = (params.get("target") or "").strip()
+        if not target:
+            return json.dumps({"ok": False, "error": "missing_target"})
+        return await self._send("airstrike", {"target": target})

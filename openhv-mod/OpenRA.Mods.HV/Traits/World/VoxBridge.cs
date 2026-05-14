@@ -383,6 +383,7 @@ namespace OpenRA.Mods.HV.Traits
 				case "toggle_grid":       return HandleToggleGrid(cmd.Args);
 				case "toggle_labels":     return HandleToggleLabels(cmd.Args);
 				case "pan_camera":        return HandlePanCamera(cmd.Args);
+				case "airstrike":         return HandleAirstrike(cmd.Args);
 				case "meta_pause":        return HandleMetaPause(cmd.Args);
 				case "query":             return (true, null);
 				default:                  return (false, "unknown_intent");
@@ -1022,6 +1023,35 @@ namespace OpenRA.Mods.HV.Traits
 					world.IssueOrder(new Order("SetUnitStance", a, false) { ExtraData = (uint)UnitStance.Defend });
 			}
 			Log.Write("debug", $"[VoxBridge] hold_position: {selected.Count} units stopped + Defend stance");
+			return (true, null);
+		}
+
+		(bool ok, string error) HandleAirstrike(JsonElement args)
+		{
+			var p = world.LocalPlayer;
+			if (p == null) return (false, "no_local_player");
+
+			var target = args.TryGetProperty("target", out var t) ? t.GetString() : null;
+			if (string.IsNullOrEmpty(target)) return (false, "missing_target");
+
+			var cell = ResolveLogicalCell(target);
+			if (cell == null) return (false, "unknown_target");
+
+			// HV's airstrike is the AirstrikePower trait on the Radar Dome.
+			// Order name is FlushBombers; subject is the player actor; target
+			// is the cell to strike. We just issue the order — if the power
+			// isn't charged yet, the engine no-ops it (and the radar's voice
+			// notifications tell the player to wait).
+			var radar = world.Actors.FirstOrDefault(a =>
+				!a.IsDead && a.IsInWorld && a.Owner == p &&
+				a.Info.Name.Equals("radar", StringComparison.OrdinalIgnoreCase));
+			if (radar == null) return (false, "no_radar");
+
+			world.IssueOrder(new Order("FlushBombers", p.PlayerActor, Target.FromCell(world, cell.Value), false)
+			{
+				SuppressVisualFeedback = true,
+			});
+			Log.Write("debug", $"[VoxBridge] airstrike -> {target} ({cell.Value})");
 			return (true, null);
 		}
 

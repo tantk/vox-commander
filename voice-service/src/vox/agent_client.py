@@ -61,6 +61,7 @@ class AgentClient:
         client_tools.register("toggle_grid",      t.toggle_grid,      is_async=True)
         client_tools.register("toggle_labels",    t.toggle_labels,    is_async=True)
         client_tools.register("pan_camera",       t.pan_camera,       is_async=True)
+        client_tools.register("airstrike",        t.airstrike,        is_async=True)
 
         self.conv = Conversation(
             client,

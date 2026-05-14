@@ -221,6 +221,9 @@ TOOLS = [
     _tool("pan_camera",
         "Move the camera viewport so a target location is on screen. Use whenever the commander says 'look at', 'show me', 'pan to', 'go to', or asks about somewhere off-screen on a large map — fundamental to keyboard-and-mouse-free play.",
         params=_target_param()),
+    _tool("airstrike",
+        "Call in an airstrike (FlushBombers support power from the Radar Dome) on a target location. Requires a Radar building owned by the player. The power has a ~150s charge cooldown between uses; firing it before ready is a silent no-op (the in-game radar voice will announce when it's ready).",
+        params=_target_param()),
 ]
 
 VOICE_ID_XO_ADAM = "pNInz6obpgDQGcFmaJgB"          # deep tactical male
