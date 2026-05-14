@@ -22,23 +22,27 @@ Players:
 		OwnsWorld: True
 		NonCombatant: True
 		Faction: Random
+	# Creeps is the static-but-attackable enemy. Always instantiated by the
+	# engine at world load (no lobby required), so the south base is real
+	# even when Launch.Map skips lobby setup.
 	PlayerReference@Creeps:
 		Name: Creeps
-		NonCombatant: True
+		NonCombatant: False
 		Faction: Random
-		Enemies: Multi0, Multi1
+		Color: FF3030
+		Enemies: Multi0
 	PlayerReference@Multi0:
 		Name: Multi0
 		Playable: True
 		Faction: Random
-		Enemies: Creeps, Multi1
+		Enemies: Creeps
+	# Multi1 stays as a lobby slot for human-vs-human matches but is no
+	# longer the owner of pre-placed south actors.
 	PlayerReference@Multi1:
 		Name: Multi1
 		Playable: True
 		Faction: Random
-		Bot: rogue
-		AllowBots: True
-		Enemies: Creeps, Multi0
+		Enemies: Creeps
 
 Actors:
 	# Spawn anchors (keep, so MapStartingUnits still drops the builder)
@@ -101,51 +105,51 @@ Actors:
 
 	# --- Multi1 pre-placed base + army (south) ---
 	M1Outpost: outpost
-		Owner: Multi1
+		Owner: Creeps
 		Location: 21,50
 	M1Storage: storage
-		Owner: Multi1
+		Owner: Creeps
 		Location: 24,50
 	M1Factory: factory
-		Owner: Multi1
+		Owner: Creeps
 		Location: 27,50
 	M1Module: module
-		Owner: Multi1
+		Owner: Creeps
 		Location: 30,50
 	M1Generator1: generator
-		Owner: Multi1
+		Owner: Creeps
 		Location: 15,53
 	M1Generator2: generator
-		Owner: Multi1
+		Owner: Creeps
 		Location: 18,53
 	M1Generator3: generator
-		Owner: Multi1
+		Owner: Creeps
 		Location: 33,53
 	M1Generator4: generator
-		Owner: Multi1
+		Owner: Creeps
 		Location: 36,53
 	M1Tank1: mbt
-		Owner: Multi1
+		Owner: Creeps
 		Facing: 0
 		Location: 20,46
 	M1Tank2: mbt
-		Owner: Multi1
+		Owner: Creeps
 		Facing: 0
 		Location: 22,46
 	M1Tank3: mbt
-		Owner: Multi1
+		Owner: Creeps
 		Facing: 0
 		Location: 24,46
 	M1Rifle1: rifleman
-		Owner: Multi1
+		Owner: Creeps
 		Facing: 0
 		Location: 26,46
 	M1Rifle2: rifleman
-		Owner: Multi1
+		Owner: Creeps
 		Facing: 0
 		Location: 28,46
 	M1Rifle3: rifleman
-		Owner: Multi1
+		Owner: Creeps
 		Facing: 0
 		Location: 30,46
 
