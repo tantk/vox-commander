@@ -29,7 +29,7 @@ LINES: list[tuple[str, str]] = [
     ("02_build_units",        "Build me ten tanks. Train five rocketeers."),
     ("03_pan_to_enemy",       "Pan to the enemy base."),
     ("04_airstrike",          "Airstrike the enemy base."),
-    ("05_hold_position",      "Snipers and rocketeers to C3. Hold position."),
+    ("05_hold_position",      "Whole army to C3. Hold position."),
     ("06_focus_fire",         "Focus fire on Bunker-1."),
     ("07_full_assault",       "Full assault. Send everything south."),
     ("08_pull_back",          "Pull back! Defend the base!"),
