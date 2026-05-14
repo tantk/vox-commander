@@ -92,7 +92,7 @@ namespace OpenRA.Mods.HV.Traits
 	// ----------------------------------------------------------------------
 
 	[TraitLocation(SystemActors.World)]
-	[Desc("Renders the Battleship grid overlay. Attach to the world actor.")]
+	[Desc("Renders the Battleship grid overlay (axis labels only). Attach to the world actor.")]
 	public class VoxGridOverlayInfo : TraitInfo
 	{
 		[Desc("Color of the grid labels (ARGB).")]
@@ -100,6 +100,9 @@ namespace OpenRA.Mods.HV.Traits
 
 		[Desc("Font key. Bold is much more legible at zoom-out than TinyBold.")]
 		public readonly string Font = "Bold";
+
+		[Desc("Render per-cell labels at every grid square's center, not just axis labels.")]
+		public readonly bool ShowPerCellLabels = false;
 
 		public override object Create(ActorInitializer init) => new VoxGridOverlay(this);
 	}
@@ -122,11 +125,29 @@ namespace OpenRA.Mods.HV.Traits
 
 			font ??= Game.Renderer.Fonts[info.Font];
 			var map = self.World.Map;
+			var b = map.Bounds;
+			var stepX = b.Width / mgr.Columns;
+			var stepY = b.Height / mgr.Rows;
 
-			foreach (var (cell, label) in mgr.AllCells(self.World))
+			// Column letters across the top of the playable area.
+			for (var c = 0; c < mgr.Columns; c++)
 			{
-				var pos = map.CenterOfCell(cell);
-				yield return new TextAnnotationRenderable(font, pos, 0, info.Color, label);
+				var cell = new CPos(b.Left + c * stepX + stepX / 2, b.Top);
+				yield return new TextAnnotationRenderable(font, map.CenterOfCell(cell), 0, info.Color, ((char)('A' + c)).ToString());
+			}
+
+			// Row digits down the left edge of the playable area.
+			for (var r = 0; r < mgr.Rows; r++)
+			{
+				var cell = new CPos(b.Left, b.Top + r * stepY + stepY / 2);
+				yield return new TextAnnotationRenderable(font, map.CenterOfCell(cell), 0, info.Color, (r + 1).ToString());
+			}
+
+			// Optionally: faint per-cell labels at each square's center.
+			if (info.ShowPerCellLabels)
+			{
+				foreach (var (cell, label) in mgr.AllCells(self.World))
+					yield return new TextAnnotationRenderable(font, map.CenterOfCell(cell), 0, info.Color, label);
 			}
 		}
 
