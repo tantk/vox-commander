@@ -78,6 +78,9 @@ Actors:
 	M0Generator4: generator
 		Owner: Multi0
 		Location: 36,18
+	M0Radar: radar
+		Owner: Multi0
+		Location: 33,21
 	M0Tank1: mbt
 		Owner: Multi0
 		Facing: 512
@@ -128,6 +131,9 @@ Actors:
 	M1Generator4: generator
 		Owner: Creeps
 		Location: 36,53
+	M1Radar: radar
+		Owner: Creeps
+		Location: 33,50
 	M1Tank1: mbt
 		Owner: Creeps
 		Facing: 0
